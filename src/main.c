@@ -2,22 +2,36 @@
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-  argc=argc;
-  char *PathName = argv[1];
-  if (PathName == NULL) {
-    PathName = "main.lua";
+  const char *PathName = "main.lua";
+
+  if (argc > 1) {
+    PathName = argv[1];
   }
 
   FILE *InputFile = fopen(PathName, "r");
 
-  int InputSize;
+  if (InputFile == NULL) {
+    perror(PathName);
+    return 1;
+  }
+
   fseek(InputFile, 0, SEEK_END);
-  InputSize = ftell(InputFile);
+  long InputSize = ftell(InputFile);
   fseek(InputFile, 0, SEEK_SET);
 
-  const char *InputBuffer = malloc(InputSize);
-  fread(InputBuffer, 1, InputSize, InputFile);
+  char *InputBuffer = malloc(InputSize + 1);
 
-  printf("%s", InputBuffer)
+  if (InputBuffer == NULL) {
+    fclose(InputFile);
+    return 1;
+  }
+
+  fread(InputBuffer, 1, InputSize, InputFile);
+  InputBuffer[InputSize] = '\0';
+
+  printf("%s", InputBuffer);
+
+  free(InputBuffer);
+  fclose(InputFile);
   return 0;
 }
