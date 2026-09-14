@@ -2,7 +2,6 @@ CC = cc
 CFLAGS = -O2 -Wall -Wextra
 LIBS = -lm
 
-ASSET = asset
 SRC = src
 BUILD = build
 OUT = $(BUILD)/rua
@@ -17,7 +16,6 @@ clean:
 	rm -rf $(BUILD)/*
 
 compile: $(OUT)
-	cp -R $(ASSET) $(BUILD)/.
 
 run:
 	./$(OUT)
