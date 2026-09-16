@@ -31,12 +31,10 @@ int main(int argc, char **argv) {
   fread(InputBuffer, 1, InputSize, InputFile);
   InputBuffer[InputSize] = '\0';
 
-  printf("%s", InputBuffer);
-
   fclose(InputFile);
 
   RuaResult Result = RuaLoadString(InputBuffer);
-  printf("%d", Result);
+  printf("%d\n", Result);
 
   free(InputBuffer);
   return 0;
