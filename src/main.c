@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "rua.h"
+
 int main(int argc, char **argv) {
   const char *PathName = "main.lua";
 
@@ -31,7 +33,11 @@ int main(int argc, char **argv) {
 
   printf("%s", InputBuffer);
 
-  free(InputBuffer);
   fclose(InputFile);
+
+  RuaResult Result = RuaLoadString(InputBuffer);
+  printf("%d", Result);
+
+  free(InputBuffer);
   return 0;
 }
