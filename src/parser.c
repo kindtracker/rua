@@ -19,14 +19,16 @@ void RuaParseCall(RuaState *State, RuaASTNode *Node) {
   State->TokenIdx += 1;
   State->Token = RuaNextToken(State);
 
-  printf("%d\n", State->Token->Type);
   while (true) {
-    Node->Arguments[Node->ArgumentCount].Type = RUA_VALUE_STRING;
-    Node->Arguments[Node->ArgumentCount].String = State->Token->String;
-    Node->Arguments[Node->ArgumentCount].StringLength =
-        State->Token->StringLength;
-    printf("%s\n", Node->Arguments[Node->ArgumentCount].String);
-
+    if (State->Token->Type == RUA_TOKEN_STRING) {
+      Node->Arguments[Node->ArgumentCount].Type = RUA_VALUE_STRING;
+      Node->Arguments[Node->ArgumentCount].String = State->Token->String;
+      Node->Arguments[Node->ArgumentCount].StringLength =
+          State->Token->StringLength;
+    } else if (State->Token->Type == RUA_TOKEN_NUMBER) {
+      Node->Arguments[Node->ArgumentCount].Type = RUA_VALUE_NUMBER;
+      Node->Arguments[Node->ArgumentCount].Number = State->Token->Number;
+    }
     Node->ArgumentCount++;
 
     State->Token = RuaNextToken(State);
