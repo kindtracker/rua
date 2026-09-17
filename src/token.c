@@ -30,7 +30,6 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
         Idx++;
       }
 
-      printf("Token %d\n", State->TokenCount);
       Token->Type = RUA_TOKEN_IDENT;
       Token->String = Idx - IdentLength;
       Token->StringLength = IdentLength;

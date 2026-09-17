@@ -28,6 +28,18 @@ typedef struct {
 } RuaToken;
 
 typedef enum {
+  RUA_VALUE_STRING,
+  RUA_VALUE_NUMBER,
+} RuaValueType;
+
+typedef struct {
+  RuaValueType Type;
+  const char *String;
+  int StringLength;
+  double Number;
+} RuaValue;
+
+typedef enum {
   RUA_AST_CALL,
   RUA_AST_IDENT,
   RUA_AST_STRING,
@@ -42,6 +54,9 @@ typedef struct RuaASTNode {
 
   struct RuaASTNode **Children;
   int ChildCount;
+
+  RuaValue Arguments[32];
+  int ArgumentCount;
 } RuaASTNode;
 
 typedef struct {
@@ -49,6 +64,7 @@ typedef struct {
 
   RuaToken *Tokens;
   int TokenCount;
+  RuaToken *Token;
   int TokenIdx;
 
   RuaASTNode AST;
