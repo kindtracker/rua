@@ -1,74 +1,20 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "rua.h"
 
-RuaToken *RuaNewToken(RuaState *State) {
-  State->TokenCount++;
-
-  State->Tokens = realloc(State->Tokens, State->TokenCount * sizeof(RuaToken));
-
-  return &State->Tokens[State->TokenCount - 1];
+RuaToken *RuaNextToken(RuaState *State) {
+  State->TokenIdx++;
+  return &State->Tokens[State->TokenIdx];
 }
 
-RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
-  State->Tokens = malloc(sizeof(RuaToken));
-  State->TokenCount = 0;
-
+RuaResult RuaParseLua(RuaState *State) {
+  State->TokenIdx = 0;
   RuaToken *Token = State->Tokens;
 
-  const char *Idx = LuaCode;
-  while (*Idx) {
-    // Ident
-    if (isalpha((unsigned char)*Idx) || *Idx == '_') {
-      int IdentLength = 1;
-      Idx++;
-      while (isalnum((unsigned char)*Idx) || *Idx == '_') {
-        IdentLength++;
-        Idx++;
-      }
-
-      Token->Type = RUA_TOKEN_IDENT;
-      Token->String = Idx - IdentLength;
-      Token->StringLength = IdentLength;
-      Token = RuaNewToken(State);
-
-      printf("%.*s\n", IdentLength, Idx - IdentLength);
-      continue;
-
-      // Punct
-    } else if (*Idx == '(' || *Idx == ')' || *Idx == '{' || *Idx == '}') {
-      Token->Type = *Idx == '('   ? RUA_TOKEN_LPAREN
-                    : *Idx == ')' ? RUA_TOKEN_RPAREN
-                    : *Idx == '{' ? RUA_TOKEN_LBRACE
-                                  : RUA_TOKEN_RBRACE;
-      Token->String = Idx;
-      Token = RuaNewToken(State);
-
-      printf("%c\n", *Idx);
-      Idx++;
-      continue;
-
-      // String
-    } else if (*Idx == '"') {
-      int StringLength = 0;
-      Idx++;
-      while (*Idx != '"') {
-        StringLength++;
-        Idx++;
-      }
-      Idx++;
-
-      Token->Type = RUA_TOKEN_STRING;
-      Token->String = Idx - StringLength - 1;
-      Token->StringLength = StringLength;
-      Token = RuaNewToken(State);
-
-      printf("%.*s\n", StringLength, Idx - StringLength - 1);
-      continue;
-    }
-    Idx++;
+  while (Token->Type != RUA_TOKEN_EOF) {
+    printf("%d\n", Token->Type);
+    Token = RuaNextToken(State);
   }
 
   return RUA_SUCCESSFUL;

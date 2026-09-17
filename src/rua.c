@@ -5,11 +5,8 @@ RuaState RuaNewState() {
   return State;
 }
 
-RuaResult RuaParseLua(RuaState *State, const char *LuaCode) {
-  return RUA_SUCCESSFUL;
-}
-
 RuaResult RuaLoadString(RuaState *State, const char *LuaCode) {
   RuaTokenizeLua(State, LuaCode);
+  RuaParseLua(State);
   return RUA_SUCCESSFUL;
 }

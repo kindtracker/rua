@@ -49,11 +49,12 @@ typedef struct {
 
   RuaToken *Tokens;
   int TokenCount;
+  int TokenIdx;
 
   RuaASTNode AST;
 } RuaState;
 
 RuaState RuaNewState();
 RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode);
-RuaResult RuaParseLua(RuaState *State, const char *LuaCode);
+RuaResult RuaParseLua(RuaState *State);
 RuaResult RuaLoadString(RuaState *State, const char *LuaCode);
