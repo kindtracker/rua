@@ -18,6 +18,21 @@ RuaResult RuaTokenizeLua(const char *LuaCode) {
 
       printf("%.*s\n", IdentLength, Idx - IdentLength);
       continue;
+    } else if (*Idx == '(' || *Idx == ')' || *Idx == '{' || *Idx == '}') {
+      printf("%c\n", *Idx);
+      Idx++;
+      continue;
+    } else if (*Idx == '"') {
+      int StringLength = 0;
+      Idx++;
+      while (*Idx != '"') {
+        StringLength++;
+        Idx++;
+      }
+      Idx++;
+
+      printf("%.*s\n", StringLength, Idx - StringLength - 1);
+      continue;
     }
     Idx++;
   }
