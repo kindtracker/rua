@@ -2,6 +2,58 @@
 
 typedef enum { RUA_SUCCESSFUL = 0, RUA_FAIL = 101 } RuaResult;
 
-RuaResult RuaTokenizeLua(const char *LuaCode);
-RuaResult RuaParseLua(const char *LuaCode);
-RuaResult RuaLoadString(const char *LuaCode);
+typedef enum {
+  RUA_TOKEN_EOF,
+
+  RUA_TOKEN_IDENT,
+  RUA_TOKEN_NUMBER,
+  RUA_TOKEN_STRING,
+
+  RUA_TOKEN_LPAREN,   // (
+  RUA_TOKEN_RPAREN,   // )
+  RUA_TOKEN_LBRACE,   // {
+  RUA_TOKEN_RBRACE,   // }
+  RUA_TOKEN_LBRACKET, // [
+  RUA_TOKEN_RBRACKET, // ]
+
+  RUA_TOKEN_OPERATOR,
+  RUA_TOKEN_KEYWORD
+} RuaTokenType;
+
+typedef struct {
+  RuaTokenType Type;
+  const char *String;
+  int StringLength;
+  double Number;
+} RuaToken;
+
+typedef enum {
+  RUA_AST_CALL,
+  RUA_AST_IDENT,
+  RUA_AST_STRING,
+  RUA_AST_NUMBER
+} RuaASTType;
+
+typedef struct RuaASTNode {
+  RuaASTType Type;
+
+  const char *String;
+  int StringLength;
+
+  struct RuaASTNode **Children;
+  int ChildCount;
+} RuaASTNode;
+
+typedef struct {
+  const char *LuaCode;
+
+  RuaToken *Tokens;
+  int TokenCount;
+
+  RuaASTNode AST;
+} RuaState;
+
+RuaState RuaNewState();
+RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode);
+RuaResult RuaParseLua(RuaState *State, const char *LuaCode);
+RuaResult RuaLoadString(RuaState *State, const char *LuaCode);

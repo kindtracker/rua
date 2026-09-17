@@ -33,7 +33,9 @@ int main(int argc, char **argv) {
 
   fclose(InputFile);
 
-  RuaResult Result = RuaLoadString(InputBuffer);
+  RuaState State = RuaNewState();
+
+  RuaResult Result = RuaLoadString(&State, InputBuffer);
   printf("%d\n", Result);
 
   free(InputBuffer);

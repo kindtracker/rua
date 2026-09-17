@@ -1,11 +1,23 @@
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "rua.h"
 
-RuaResult RuaTokenizeLua(const char *LuaCode) {
-  const char *Idx = LuaCode;
+RuaToken *RuaNewToken(RuaState *State) {
+  State->TokenCount++;
+  RuaToken *Token = &State->Tokens[State->TokenCount];
+  Token = malloc(sizeof(RuaToken));
+  return Token;
+}
 
+RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
+  State->Tokens = malloc(sizeof(RuaToken));
+  State->TokenCount = 0;
+
+  RuaToken *Token = State->Tokens;
+
+  const char *Idx = LuaCode;
   while (*Idx) {
     // Ident
     if (isalpha((unsigned char)*Idx) || *Idx == '_') {
@@ -16,12 +28,28 @@ RuaResult RuaTokenizeLua(const char *LuaCode) {
         Idx++;
       }
 
+      Token->Type = RUA_TOKEN_IDENT;
+      Token->String = Idx - IdentLength;
+      Token->StringLength = IdentLength;
+      Token = RuaNewToken(State);
+
       printf("%.*s\n", IdentLength, Idx - IdentLength);
       continue;
+
+      // Punct
     } else if (*Idx == '(' || *Idx == ')' || *Idx == '{' || *Idx == '}') {
+      Token->Type = *Idx == '('   ? RUA_TOKEN_LPAREN
+                    : *Idx == ')' ? RUA_TOKEN_RPAREN
+                    : *Idx == '{' ? RUA_TOKEN_LBRACE
+                                  : RUA_TOKEN_RBRACE;
+      Token->String = Idx;
+      Token = RuaNewToken(State);
+
       printf("%c\n", *Idx);
       Idx++;
       continue;
+
+      // String
     } else if (*Idx == '"') {
       int StringLength = 0;
       Idx++;
@@ -30,6 +58,11 @@ RuaResult RuaTokenizeLua(const char *LuaCode) {
         Idx++;
       }
       Idx++;
+
+      Token->Type = RUA_TOKEN_STRING;
+      Token->String = Idx - StringLength - 1;
+      Token->StringLength = StringLength;
+      Token = RuaNewToken(State);
 
       printf("%.*s\n", StringLength, Idx - StringLength - 1);
       continue;

@@ -1,8 +1,15 @@
 #include "rua.h"
 
-RuaResult RuaParseLua(const char *LuaCode) { return RUA_SUCCESSFUL; }
+RuaState RuaNewState() {
+  RuaState State = {0};
+  return State;
+}
 
-RuaResult RuaLoadString(const char *LuaCode) {
-  RuaTokenizeLua(LuaCode);
+RuaResult RuaParseLua(RuaState *State, const char *LuaCode) {
+  return RUA_SUCCESSFUL;
+}
+
+RuaResult RuaLoadString(RuaState *State, const char *LuaCode) {
+  RuaTokenizeLua(State, LuaCode);
   return RUA_SUCCESSFUL;
 }
