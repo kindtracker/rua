@@ -17,7 +17,9 @@ typedef enum {
   RUA_TOKEN_RBRACKET, // ]
 
   RUA_TOKEN_OPERATOR,
-  RUA_TOKEN_KEYWORD
+  RUA_TOKEN_KEYWORD,
+
+  RUA_TOKEN_NONE
 } RuaTokenType;
 
 typedef struct {

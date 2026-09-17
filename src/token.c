@@ -1,8 +1,14 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "rua.h"
+
+const char *const RuaKeywords[] = {
+    "and",      "break",  "do",     "else", "elseif", "end",   "false", "for",
+    "function", "global", "goto",   "if",   "in",     "local", "nil",   "not",
+    "or",       "repeat", "return", "then", "true",   "until", "while"};
 
 RuaToken *RuaNewToken(RuaState *State) {
   State->TokenCount++;
@@ -21,7 +27,13 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
 
   const char *Idx = LuaCode;
   while (*Idx) {
-    // Ident
+    // Whitespace
+    if (isspace(*Idx)) {
+      Idx++;
+      continue;
+    }
+
+    // Ident / Keyword
     if (isalpha((unsigned char)*Idx) || *Idx == '_') {
       int IdentLength = 1;
       Idx++;
@@ -30,7 +42,16 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
         Idx++;
       }
 
-      Token->Type = RUA_TOKEN_IDENT;
+      bool IsKeyword = false;
+      for (int Index = 0; Index < sizeof(RuaKeywords) / sizeof(const char *);
+           Index++) {
+        if (strcmp(RuaKeywords[Index], Idx - IdentLength) == 0) {
+          IsKeyword;
+          break;
+        }
+      }
+
+      Token->Type = IsKeyword ? RUA_TOKEN_KEYWORD : RUA_TOKEN_IDENT;
       Token->String = Idx - IdentLength;
       Token->StringLength = IdentLength;
       Token = RuaNewToken(State);
@@ -61,6 +82,14 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       Token->String = Idx - StringLength - 1;
       Token->StringLength = StringLength;
       Token = RuaNewToken(State);
+      continue;
+
+      // Operator
+    } else if (*Idx == '+' || *Idx == '-' || *Idx == '*' || *Idx == '\\') {
+      Token->Type = RUA_TOKEN_OPERATOR;
+      Token->String = Idx;
+      Token = RuaNewToken(State);
+      Idx++;
       continue;
     }
     Idx++;
