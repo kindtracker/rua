@@ -6,9 +6,10 @@
 
 RuaToken *RuaNewToken(RuaState *State) {
   State->TokenCount++;
-  RuaToken *Token = &State->Tokens[State->TokenCount];
-  Token = malloc(sizeof(RuaToken));
-  return Token;
+
+  State->Tokens = realloc(State->Tokens, State->TokenCount * sizeof(RuaToken));
+
+  return &State->Tokens[State->TokenCount - 1];
 }
 
 RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
