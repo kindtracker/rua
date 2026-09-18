@@ -45,17 +45,26 @@ typedef struct {
   RuaValue Value;
 } RuaASTExpr;
 
-typedef enum { RUA_AST_CALL, RUA_AST_VAR_DECL } RuaASTType;
+typedef enum {
+  RUA_AST_CALL,
+  RUA_AST_VAR_DECL,
+  RUA_AST_FUNCTION,
+  RUA_AST_BLOCK
+} RuaASTType;
 
 typedef struct RuaASTNode {
   RuaASTType Type;
   RuaASTExpr Value;
+  const char *Name;
+  int NameLength;
 
   struct RuaASTNode **Children;
   int ChildCount;
 
   RuaASTExpr Arguments[32];
   int ArgumentCount;
+  const char *Parameters[32];
+  int ParameterCount;
   bool IsLocal;
 } RuaASTNode;
 
@@ -72,5 +81,6 @@ typedef struct {
 
 RuaState RuaNewState();
 RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode);
+RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local);
 RuaResult RuaParseLua(RuaState *State);
 RuaResult RuaLoadString(RuaState *State, const char *LuaCode);

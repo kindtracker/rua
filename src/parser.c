@@ -62,6 +62,80 @@ void RuaParseVarDecl(RuaState *State, RuaASTNode *Node) {
   printf("b%f\n", Node->Value.Value.Number);
 }
 
+RuaASTNode *RuaParseBlock(RuaState *State) {
+  RuaASTNode *Block = malloc(sizeof(RuaASTNode));
+
+  Block->Type = RUA_AST_BLOCK;
+  Block->Children = NULL;
+  Block->ChildCount = 0;
+
+  while (State->Token->Type != RUA_TOKEN_EOF) {
+    if (State->Token->Type == RUA_TOKEN_KEYWORD &&
+        (strcmp(State->Token->Value.String, "end") == 0 ||
+         strcmp(State->Token->Value.String, "else") == 0 ||
+         strcmp(State->Token->Value.String, "elseif") == 0)) {
+      break;
+    }
+
+    RuaASTNode *Node = RuaParseStatemenet(State, false);
+
+    Block->ChildCount++;
+    Block->Children =
+        realloc(Block->Children, Block->ChildCount * sizeof(RuaASTNode *));
+    Block->Children[Block->ChildCount - 1] = Node;
+  }
+
+  return Block;
+}
+
+RuaASTNode *RuaParseFunction(RuaState *State) {
+  RuaASTNode *Node = malloc(sizeof(RuaASTNode));
+
+  Node->Type = RUA_AST_FUNCTION;
+  Node->ParameterCount = 0;
+
+  State->Token = RuaNextToken(State);
+
+  Node->Name = State->Token->Value.String;
+  Node->NameLength = State->Token->Value.StringLength;
+
+  State->Token = RuaNextToken(State);
+
+  if (State->Token->Type != RUA_TOKEN_LPAREN) {
+    free(Node);
+    return NULL;
+  }
+
+  State->Token = RuaNextToken(State);
+  while (State->Token->Type != RUA_TOKEN_RPAREN) {
+    if (State->Token->Type != RUA_TOKEN_IDENT) {
+      free(Node);
+      return NULL;
+    }
+    Node->Parameters[Node->ParameterCount] = State->Token->Value.String;
+    Node->ParameterCount++;
+    State->Token = RuaNextToken(State);
+  }
+
+  State->Token = RuaNextToken(State);
+
+  Node->Children = NULL;
+  Node->ChildCount = 0;
+
+  while (!(State->Token->Type == RUA_TOKEN_KEYWORD &&
+           strcmp(State->Token->Value.String, "end") == 0)) {
+    RuaASTNode *Child = RuaParseStatemenet(State, false);
+
+    Node->ChildCount++;
+    Node->Children =
+        realloc(Node->Children, Node->ChildCount * sizeof(RuaASTNode *));
+    Node->Children[Node->ChildCount - 1] = Child;
+  }
+
+  State->Token = RuaNextToken(State);
+  return Node;
+}
+
 RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
   RuaASTNode *Node = malloc(sizeof(RuaASTNode));
 
@@ -70,6 +144,9 @@ RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
     if (strcmp(State->Token->Value.String, "local") == 0) {
       State->Token = RuaNextToken(State);
       return RuaParseStatemenet(State, true);
+    } else if (strcmp(State->Token->Value.String, "function") == 0) {
+      State->Token = RuaNextToken(State);
+      RuaParseFunction(State);
     }
   } else if (State->Token->Type == RUA_TOKEN_IDENT) {
     State->Token = RuaNextToken(State);
@@ -84,7 +161,8 @@ RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
   }
   return Node;
 }
-a RuaResult RuaParseLua(RuaState *State) {
+
+RuaResult RuaParseLua(RuaState *State) {
   State->TokenIdx = -1;
   State->Token = State->Tokens;
 
