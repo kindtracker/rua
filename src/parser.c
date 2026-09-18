@@ -88,11 +88,11 @@ RuaASTNode *RuaParseBlock(RuaState *State) {
   return Block;
 }
 
-RuaASTNode *RuaParseFunction(RuaState *State) {
-  RuaASTNode *Node = malloc(sizeof(RuaASTNode));
-
+void RuaParseFunction(RuaState *State, RuaASTNode *Node) {
   Node->Type = RUA_AST_FUNCTION;
   Node->ParameterCount = 0;
+  Node->Children = NULL;
+  Node->ChildCount = 0;
 
   State->Token = RuaNextToken(State);
 
@@ -100,40 +100,22 @@ RuaASTNode *RuaParseFunction(RuaState *State) {
   Node->NameLength = State->Token->Value.StringLength;
 
   State->Token = RuaNextToken(State);
-
   if (State->Token->Type != RUA_TOKEN_LPAREN) {
-    free(Node);
-    return NULL;
+    return;
   }
-
   State->Token = RuaNextToken(State);
-  while (State->Token->Type != RUA_TOKEN_RPAREN) {
-    if (State->Token->Type != RUA_TOKEN_IDENT) {
-      free(Node);
-      return NULL;
-    }
-    Node->Parameters[Node->ParameterCount] = State->Token->Value.String;
-    Node->ParameterCount++;
+
+  while (true) {
+    Node->Arguments[Node->ArgumentCount] = *RuaParseExpr(State);
+    printf("%s\n", Node->Arguments[Node->ArgumentCount].Value.String);
+
+    Node->ArgumentCount++;
+
     State->Token = RuaNextToken(State);
+    if (State->Token->Type == RUA_TOKEN_RPAREN) {
+      break;
+    }
   }
-
-  State->Token = RuaNextToken(State);
-
-  Node->Children = NULL;
-  Node->ChildCount = 0;
-
-  while (!(State->Token->Type == RUA_TOKEN_KEYWORD &&
-           strcmp(State->Token->Value.String, "end") == 0)) {
-    RuaASTNode *Child = RuaParseStatemenet(State, false);
-
-    Node->ChildCount++;
-    Node->Children =
-        realloc(Node->Children, Node->ChildCount * sizeof(RuaASTNode *));
-    Node->Children[Node->ChildCount - 1] = Child;
-  }
-
-  State->Token = RuaNextToken(State);
-  return Node;
 }
 
 RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
@@ -141,12 +123,10 @@ RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
 
   State->Token = RuaNextToken(State);
   if (State->Token->Type == RUA_TOKEN_KEYWORD) {
-    if (strcmp(State->Token->Value.String, "local") == 0) {
-      State->Token = RuaNextToken(State);
+    if (strncmp(State->Token->Value.String, "local", 5) == 0) {
       return RuaParseStatemenet(State, true);
-    } else if (strcmp(State->Token->Value.String, "function") == 0) {
-      State->Token = RuaNextToken(State);
-      RuaParseFunction(State);
+    } else if (strncmp(State->Token->Value.String, "function", 8) == 0) {
+      RuaParseFunction(State, Node);
     }
   } else if (State->Token->Type == RUA_TOKEN_IDENT) {
     State->Token = RuaNextToken(State);
