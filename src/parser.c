@@ -59,7 +59,6 @@ void RuaParseVarDecl(RuaState *State, RuaASTNode *Node) {
   State->Token = RuaNextToken(State);
 
   Node->Value = *RuaParseExpr(State);
-  printf("b%f\n", Node->Value.Value.Number);
 }
 
 RuaASTNode *RuaParseBlock(RuaState *State) {
@@ -107,7 +106,6 @@ void RuaParseFunction(RuaState *State, RuaASTNode *Node) {
 
   while (true) {
     Node->Arguments[Node->ArgumentCount] = *RuaParseExpr(State);
-    printf("%s\n", Node->Arguments[Node->ArgumentCount].Value.String);
 
     Node->ArgumentCount++;
 
@@ -116,10 +114,18 @@ void RuaParseFunction(RuaState *State, RuaASTNode *Node) {
       break;
     }
   }
+  State->Token = RuaNextToken(State);
+
+  RuaASTNode *Block = RuaParseBlock(State);
+  Node->ChildCount++;
+  Node->Children =
+      realloc(Block->Children, Block->ChildCount * sizeof(RuaASTNode *));
+  Node->Children[Block->ChildCount - 1] = Block;
 }
 
 RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
   RuaASTNode *Node = malloc(sizeof(RuaASTNode));
+  Node->ChildCount = 0;
 
   State->Token = RuaNextToken(State);
   if (State->Token->Type == RUA_TOKEN_KEYWORD) {
