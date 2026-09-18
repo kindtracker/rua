@@ -3,6 +3,19 @@
 typedef enum { RUA_SUCCESSFUL = 0, RUA_FAIL = 101 } RuaResult;
 
 typedef enum {
+  RUA_VALUE_IDENT,
+  RUA_VALUE_STRING,
+  RUA_VALUE_NUMBER,
+} RuaValueType;
+
+typedef struct {
+  RuaValueType Type;
+  const char *String;
+  int StringLength;
+  double Number;
+} RuaValue;
+
+typedef enum {
   RUA_TOKEN_EOF,
 
   RUA_TOKEN_IDENT,
@@ -25,23 +38,8 @@ typedef enum {
 
 typedef struct {
   RuaTokenType Type;
-  const char *String;
-  int StringLength;
-  double Number;
+  RuaValue Value;
 } RuaToken;
-
-typedef enum {
-  RUA_VALUE_IDENT,
-  RUA_VALUE_STRING,
-  RUA_VALUE_NUMBER,
-} RuaValueType;
-
-typedef struct {
-  RuaValueType Type;
-  const char *String;
-  int StringLength;
-  double Number;
-} RuaValue;
 
 typedef struct {
   RuaValue Value;

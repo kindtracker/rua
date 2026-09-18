@@ -52,8 +52,8 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       }
 
       Token->Type = IsKeyword ? RUA_TOKEN_KEYWORD : RUA_TOKEN_IDENT;
-      Token->String = Idx - IdentLength;
-      Token->StringLength = IdentLength;
+      Token->Value.String = Idx - IdentLength;
+      Token->Value.StringLength = IdentLength;
       Token = RuaNewToken(State);
       continue;
 
@@ -67,7 +67,7 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       }
 
       Token->Type = RUA_TOKEN_NUMBER;
-      Token->Number = atof(Idx - NumberLength);
+      Token->Value.Number = atof(Idx - NumberLength);
       Token = RuaNewToken(State);
       continue;
 
@@ -77,7 +77,7 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
                     : *Idx == ')' ? RUA_TOKEN_RPAREN
                     : *Idx == '{' ? RUA_TOKEN_LBRACE
                                   : RUA_TOKEN_RBRACE;
-      Token->String = Idx;
+      Token->Value.String = Idx;
       Token = RuaNewToken(State);
       Idx++;
       continue;
@@ -93,15 +93,15 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       Idx++;
 
       Token->Type = RUA_TOKEN_STRING;
-      Token->String = Idx - StringLength - 1;
-      Token->StringLength = StringLength;
+      Token->Value.String = Idx - StringLength - 1;
+      Token->Value.StringLength = StringLength;
       Token = RuaNewToken(State);
       continue;
 
       // Operator
     } else if (*Idx == '+' || *Idx == '-' || *Idx == '*' || *Idx == '\\') {
       Token->Type = RUA_TOKEN_OPERATOR;
-      Token->String = Idx;
+      Token->Value.String = Idx;
       Token = RuaNewToken(State);
       Idx++;
       continue;
@@ -109,7 +109,7 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       // Equal
     } else if (*Idx == '=') {
       Token->Type = RUA_TOKEN_EQUAL;
-      Token->String = Idx;
+      Token->Value.String = Idx;
       Token = RuaNewToken(State);
       Idx++;
       continue;

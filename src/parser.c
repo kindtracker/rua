@@ -12,15 +12,15 @@ RuaASTExpr *RuaParseExpr(RuaState *State) {
   RuaASTExpr *Expr = malloc(sizeof(RuaASTExpr));
   if (State->Token->Type == RUA_TOKEN_STRING) {
     Expr->Value.Type = RUA_VALUE_STRING;
-    Expr->Value.String = State->Token->String;
-    Expr->Value.StringLength = State->Token->StringLength;
+    Expr->Value.String = State->Token->Value.String;
+    Expr->Value.StringLength = State->Token->Value.StringLength;
   } else if (State->Token->Type == RUA_TOKEN_NUMBER) {
     Expr->Value.Type = RUA_VALUE_NUMBER;
-    Expr->Value.Number = State->Token->Number;
+    Expr->Value.Number = State->Token->Value.Number;
   } else if (State->Token->Type == RUA_TOKEN_IDENT) {
     Expr->Value.Type = RUA_VALUE_IDENT;
-    Expr->Value.String = State->Token->String;
-    Expr->Value.StringLength = State->Token->StringLength;
+    Expr->Value.String = State->Token->Value.String;
+    Expr->Value.StringLength = State->Token->Value.StringLength;
   }
 
   return Expr;
@@ -31,8 +31,7 @@ void RuaParseCall(RuaState *State, RuaASTNode *Node) {
 
   State->TokenIdx -= 2;
   State->Token = RuaNextToken(State);
-  Node->Value.Value.String = State->Token->String;
-  Node->Value.Value.StringLength = State->Token->StringLength;
+  Node->Value.Value = State->Token->Value;
 
   State->TokenIdx += 1;
   State->Token = RuaNextToken(State);
@@ -53,8 +52,7 @@ void RuaParseVarDecl(RuaState *State, RuaASTNode *Node) {
 
   State->TokenIdx -= 2;
   State->Token = RuaNextToken(State);
-  Node->Value.Value.String = State->Token->String;
-  Node->Value.Value.StringLength = State->Token->StringLength;
+  Node->Value.Value = State->Token->Value;
 
   State->TokenIdx += 1;
   State->Token = RuaNextToken(State);
