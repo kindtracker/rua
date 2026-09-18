@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "rua.h"
 
@@ -61,17 +62,25 @@ void RuaParseVarDecl(RuaState *State, RuaASTNode *Node) {
   printf("b%f\n", Node->Value.Value.Number);
 }
 
-RuaASTNode *RuaParseStatemenet(RuaState *State) {
+RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
   RuaASTNode *Node = malloc(sizeof(RuaASTNode));
 
   State->Token = RuaNextToken(State);
-  if (State->Token->Type == RUA_TOKEN_IDENT) {
+  if (State->Token->Type == RUA_TOKEN_KEYWORD) {
+    if (strcmp(State->Token->Value.String, "local") == 0) {
+      State->Token = RuaNextToken(State);
+      return RuaParseStatemenet(State, true);
+    }
+  } else if (State->Token->Type == RUA_TOKEN_IDENT) {
     State->Token = RuaNextToken(State);
     if (State->Token->Type == RUA_TOKEN_LPAREN) {
       RuaParseCall(State, Node);
     } else if (State->Token->Type == RUA_TOKEN_EQUAL) {
       RuaParseVarDecl(State, Node);
     }
+  }
+  if (Local) {
+    Node->IsLocal = true;
   }
   return Node;
 }
@@ -81,7 +90,7 @@ RuaResult RuaParseLua(RuaState *State) {
   State->Token = State->Tokens;
 
   while (State->Token->Type != RUA_TOKEN_EOF) {
-    RuaASTNode *Node = RuaParseStatemenet(State);
+    RuaASTNode *Node = RuaParseStatemenet(State, false);
     Node = Node;
   }
 

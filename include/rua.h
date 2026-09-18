@@ -49,7 +49,6 @@ typedef enum { RUA_AST_CALL, RUA_AST_VAR_DECL } RuaASTType;
 
 typedef struct RuaASTNode {
   RuaASTType Type;
-
   RuaASTExpr Value;
 
   struct RuaASTNode **Children;
@@ -57,6 +56,7 @@ typedef struct RuaASTNode {
 
   RuaASTExpr Arguments[32];
   int ArgumentCount;
+  bool IsLocal;
 } RuaASTNode;
 
 typedef struct {

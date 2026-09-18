@@ -45,7 +45,7 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       bool IsKeyword = false;
       for (uint Index = 0; Index < sizeof(RuaKeywords) / sizeof(const char *);
            Index++) {
-        if (strcmp(RuaKeywords[Index], Idx - IdentLength) == 0) {
+        if (strncmp(RuaKeywords[Index], Idx - IdentLength, IdentLength) == 0) {
           IsKeyword = true;
           break;
         }
