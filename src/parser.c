@@ -84,8 +84,7 @@ RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
   }
   return Node;
 }
-
-RuaResult RuaParseLua(RuaState *State) {
+a RuaResult RuaParseLua(RuaState *State) {
   State->TokenIdx = -1;
   State->Token = State->Tokens;
 
