@@ -57,6 +57,20 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       Token = RuaNewToken(State);
       continue;
 
+      // Number
+    } else if (isdigit((unsigned char)*Idx)) {
+      int NumberLength = 1;
+      Idx++;
+      while (isdigit((unsigned char)*Idx)) {
+        NumberLength++;
+        Idx++;
+      }
+
+      Token->Type = RUA_TOKEN_NUMBER;
+      Token->Number = atof(Idx - NumberLength);
+      Token = RuaNewToken(State);
+      continue;
+
       // Punct
     } else if (*Idx == '(' || *Idx == ')' || *Idx == '{' || *Idx == '}') {
       Token->Type = *Idx == '('   ? RUA_TOKEN_LPAREN
@@ -87,6 +101,14 @@ RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode) {
       // Operator
     } else if (*Idx == '+' || *Idx == '-' || *Idx == '*' || *Idx == '\\') {
       Token->Type = RUA_TOKEN_OPERATOR;
+      Token->String = Idx;
+      Token = RuaNewToken(State);
+      Idx++;
+      continue;
+
+      // Equal
+    } else if (*Idx == '=') {
+      Token->Type = RUA_TOKEN_EQUAL;
       Token->String = Idx;
       Token = RuaNewToken(State);
       Idx++;

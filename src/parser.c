@@ -31,8 +31,8 @@ void RuaParseCall(RuaState *State, RuaASTNode *Node) {
 
   State->TokenIdx -= 2;
   State->Token = RuaNextToken(State);
-  Node->String = State->Token->String;
-  Node->StringLength = State->Token->StringLength;
+  Node->Value.Value.String = State->Token->String;
+  Node->Value.Value.StringLength = State->Token->StringLength;
 
   State->TokenIdx += 1;
   State->Token = RuaNextToken(State);
@@ -48,6 +48,21 @@ void RuaParseCall(RuaState *State, RuaASTNode *Node) {
   }
 }
 
+void RuaParseVarDecl(RuaState *State, RuaASTNode *Node) {
+  Node->Type = RUA_AST_VAR_DECL;
+
+  State->TokenIdx -= 2;
+  State->Token = RuaNextToken(State);
+  Node->Value.Value.String = State->Token->String;
+  Node->Value.Value.StringLength = State->Token->StringLength;
+
+  State->TokenIdx += 1;
+  State->Token = RuaNextToken(State);
+
+  Node->Value = *RuaParseExpr(State);
+  printf("b%f\n", Node->Value.Value.Number);
+}
+
 RuaASTNode *RuaParseStatemenet(RuaState *State) {
   RuaASTNode *Node = malloc(sizeof(RuaASTNode));
 
@@ -56,8 +71,9 @@ RuaASTNode *RuaParseStatemenet(RuaState *State) {
     State->Token = RuaNextToken(State);
     if (State->Token->Type == RUA_TOKEN_LPAREN) {
       RuaParseCall(State, Node);
+    } else if (State->Token->Type == RUA_TOKEN_EQUAL) {
+      RuaParseVarDecl(State, Node);
     }
-    printf("%d\n", Node->Type);
   }
   return Node;
 }

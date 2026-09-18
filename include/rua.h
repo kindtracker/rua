@@ -17,6 +17,7 @@ typedef enum {
   RUA_TOKEN_RBRACKET, // ]
 
   RUA_TOKEN_OPERATOR,
+  RUA_TOKEN_EQUAL,
   RUA_TOKEN_KEYWORD,
 
   RUA_TOKEN_NONE
@@ -46,13 +47,12 @@ typedef struct {
   RuaValue Value;
 } RuaASTExpr;
 
-typedef enum { RUA_AST_CALL } RuaASTType;
+typedef enum { RUA_AST_CALL, RUA_AST_VAR_DECL } RuaASTType;
 
 typedef struct RuaASTNode {
   RuaASTType Type;
 
-  const char *String;
-  int StringLength;
+  RuaASTExpr Value;
 
   struct RuaASTNode **Children;
   int ChildCount;
