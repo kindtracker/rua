@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -O2 -Wall -Wextra -Iinclude
+CFLAGS = -O2 -Wall -Wextra -Iinclude -Wno-unused-variable
 LIBS = -lm -lcjson
 
 SRC = src

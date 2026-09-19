@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RuaXTypeToString
+#define RuaConstants
 #include "rua.h"
 
 RuaState RuaNewState() {
@@ -117,6 +117,7 @@ void RuaPrintASTNode(cJSON *Json, RuaASTNode *Node) {
 
   cJSON_AddItemToArray(Json, NodeJson);
 }
+
 RuaResult RuaPrintAST(RuaState *State) {
   cJSON *Json = cJSON_CreateArray();
 

@@ -84,8 +84,8 @@ typedef struct {
   RuaASTNode AST;
 } RuaState;
 
-#ifdef RuaXTypeToString
-RuaMapEntry RuaTokenTypeToString[] = {
+#ifdef RuaConstants
+static RuaMapEntry RuaTokenTypeToString[] = {
     {RUA_TOKEN_EOF, "<eof>"},         {RUA_TOKEN_IDENT, "Ident"},
     {RUA_TOKEN_NUMBER, "Number"},     {RUA_TOKEN_STRING, "String"},
     {RUA_TOKEN_LPAREN, "LParen"},     {RUA_TOKEN_RPAREN, "RParen"},
@@ -94,14 +94,19 @@ RuaMapEntry RuaTokenTypeToString[] = {
     {RUA_TOKEN_OPERATOR, "Operator"}, {RUA_TOKEN_EQUAL, "Equal"},
     {RUA_TOKEN_KEYWORD, "Keyword"},   {RUA_TOKEN_NONE, "<none>"}};
 
-RuaMapEntry RuaValueTypeToString[] = {{RUA_VALUE_IDENT, "Ident"},
-                                      {RUA_VALUE_STRING, "String"},
-                                      {RUA_VALUE_NUMBER, "Number"}};
+static RuaMapEntry RuaValueTypeToString[] = {{RUA_VALUE_IDENT, "Ident"},
+                                             {RUA_VALUE_STRING, "String"},
+                                             {RUA_VALUE_NUMBER, "Number"}};
 
-RuaMapEntry RuaASTTypeToString[] = {{RUA_AST_CALL, "Call"},
-                                    {RUA_AST_VAR_DECL, "VarDecl"},
-                                    {RUA_AST_FUNCTION, "Function"},
-                                    {RUA_AST_BLOCK, "Block"}};
+static RuaMapEntry RuaASTTypeToString[] = {{RUA_AST_CALL, "Call"},
+                                           {RUA_AST_VAR_DECL, "VarDecl"},
+                                           {RUA_AST_FUNCTION, "Function"},
+                                           {RUA_AST_BLOCK, "Block"}};
+
+static const char *RuaKeywords[] = {
+    "and",      "break",  "do",     "else", "elseif", "end",   "false", "for",
+    "function", "global", "goto",   "if",   "in",     "local", "nil",   "not",
+    "or",       "repeat", "return", "then", "true",   "until", "while"};
 #endif
 
 RuaState RuaNewState();

@@ -3,12 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define RuaConstants
 #include "rua.h"
-
-const char *const RuaKeywords[] = {
-    "and",      "break",  "do",     "else", "elseif", "end",   "false", "for",
-    "function", "global", "goto",   "if",   "in",     "local", "nil",   "not",
-    "or",       "repeat", "return", "then", "true",   "until", "while"};
 
 RuaToken *RuaNewToken(RuaState *State) {
   State->TokenCount++;
