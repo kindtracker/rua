@@ -119,8 +119,8 @@ void RuaParseFunction(RuaState *State, RuaASTNode *Node) {
   RuaASTNode *Block = RuaParseBlock(State);
   Node->ChildCount++;
   Node->Children =
-      realloc(Block->Children, Block->ChildCount * sizeof(RuaASTNode *));
-  Node->Children[Block->ChildCount - 1] = Block;
+      realloc(Node->Children, Node->ChildCount * sizeof(RuaASTNode *));
+  Node->Children[Node->ChildCount - 1] = Block;
 }
 
 RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
@@ -129,7 +129,7 @@ RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local) {
 
   State->Token = RuaNextToken(State);
   if (State->Token->Type == RUA_TOKEN_KEYWORD) {
-    if (strncmp(State->Token->Value.String, "IsLocal", 5) == 0) {
+    if (strncmp(State->Token->Value.String, "local", 5) == 0) {
       return RuaParseStatemenet(State, true);
     } else if (strncmp(State->Token->Value.String, "function", 8) == 0) {
       RuaParseFunction(State, Node);

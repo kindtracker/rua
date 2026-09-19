@@ -1,3 +1,3 @@
 local function hello(aawa)
-  a(2)
+  print(aawa)
 end

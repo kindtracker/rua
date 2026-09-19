@@ -91,22 +91,37 @@ RuaResult RuaPrintTokens(RuaState *State) {
   return RUA_SUCCESSFUL;
 }
 
+void RuaPrintASTNode(cJSON *Json, RuaASTNode *Node) {
+  cJSON *NodeJson = cJSON_CreateObject();
+
+  cJSON_AddStringToObject(NodeJson, "Type", RuaASTTypeString(Node->Type));
+
+  if (Node->Name) {
+    cJSON_AddItemToObject(NodeJson, "Name",
+                          RuaJSONString(Node->Name, Node->NameLength));
+  }
+
+  cJSON_AddBoolToObject(NodeJson, "Local", Node->IsLocal);
+  cJSON_AddNumberToObject(NodeJson, "Arguments", Node->ArgumentCount);
+  cJSON_AddNumberToObject(NodeJson, "Parameters", Node->ParameterCount);
+
+  if (Node->ChildCount > 0) {
+    cJSON *Children = cJSON_CreateArray();
+
+    for (int i = 0; i < Node->ChildCount; i++) {
+      RuaPrintASTNode(Children, Node->Children[i]);
+    }
+
+    cJSON_AddItemToObject(NodeJson, "Children", Children);
+  }
+
+  cJSON_AddItemToArray(Json, NodeJson);
+}
 RuaResult RuaPrintAST(RuaState *State) {
   cJSON *Json = cJSON_CreateArray();
 
   for (int i = 0; i < State->AST.ChildCount; i++) {
-    RuaASTNode *Node = State->AST.Children[i];
-    cJSON *NodeJson = cJSON_CreateObject();
-    cJSON_AddStringToObject(NodeJson, "Type", RuaASTTypeString(Node->Type));
-    if (Node->Name) {
-      cJSON_AddItemToObject(NodeJson, "Name",
-                            RuaJSONString(Node->Name, Node->NameLength));
-    }
-
-    cJSON_AddBoolToObject(NodeJson, "Local", Node->IsLocal);
-    cJSON_AddNumberToObject(NodeJson, "Arguments", Node->ArgumentCount);
-    cJSON_AddNumberToObject(NodeJson, "Parameters", Node->ParameterCount);
-    cJSON_AddItemToArray(Json, NodeJson);
+    RuaPrintASTNode(Json, State->AST.Children[i]);
   }
 
   char *String = cJSON_Print(Json);
