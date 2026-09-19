@@ -38,6 +38,9 @@ int main(int argc, char **argv) {
   RuaResult Result = RuaLoadString(&State, InputBuffer);
   Result = Result;
 
+  RuaPrintTokens(&State);
+  RuaPrintAST(&State);
+
   free(InputBuffer);
   return 0;
 }

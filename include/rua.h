@@ -2,6 +2,11 @@
 
 typedef enum { RUA_SUCCESSFUL = 0, RUA_FAIL = 101 } RuaResult;
 
+typedef struct {
+  int Key;
+  const char *Value;
+} RuaMapEntry;
+
 typedef enum {
   RUA_VALUE_IDENT,
   RUA_VALUE_STRING,
@@ -79,8 +84,30 @@ typedef struct {
   RuaASTNode AST;
 } RuaState;
 
+#ifdef RuaXTypeToString
+RuaMapEntry RuaTokenTypeToString[] = {
+    {RUA_TOKEN_EOF, "<eof>"},         {RUA_TOKEN_IDENT, "Ident"},
+    {RUA_TOKEN_NUMBER, "Number"},     {RUA_TOKEN_STRING, "String"},
+    {RUA_TOKEN_LPAREN, "LParen"},     {RUA_TOKEN_RPAREN, "RParen"},
+    {RUA_TOKEN_LBRACE, "LBrace"},     {RUA_TOKEN_RBRACE, "RBrace"},
+    {RUA_TOKEN_LBRACKET, "LBRacket"}, {RUA_TOKEN_RBRACKET, "RBRacket"},
+    {RUA_TOKEN_OPERATOR, "Operator"}, {RUA_TOKEN_EQUAL, "Equal"},
+    {RUA_TOKEN_KEYWORD, "Keyword"},   {RUA_TOKEN_NONE, "<none>"}};
+
+RuaMapEntry RuaValueTypeToString[] = {{RUA_VALUE_IDENT, "IDENT"},
+                                      {RUA_VALUE_STRING, "STRING"},
+                                      {RUA_VALUE_NUMBER, "NUMBER"}};
+
+RuaMapEntry RuaASTTypeToString[] = {{RUA_AST_CALL, "CALL"},
+                                    {RUA_AST_VAR_DECL, "VAR_DECL"},
+                                    {RUA_AST_FUNCTION, "FUNCTION"},
+                                    {RUA_AST_BLOCK, "BLOCK"}};
+#endif
+
 RuaState RuaNewState();
 RuaResult RuaTokenizeLua(RuaState *State, const char *LuaCode);
 RuaASTNode *RuaParseStatemenet(RuaState *State, bool Local);
 RuaResult RuaParseLua(RuaState *State);
 RuaResult RuaLoadString(RuaState *State, const char *LuaCode);
+RuaResult RuaPrintTokens(RuaState *State);
+RuaResult RuaPrintAST(RuaState *State);

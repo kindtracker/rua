@@ -1,6 +1,6 @@
 CC = cc
 CFLAGS = -O2 -Wall -Wextra -Iinclude
-LIBS = -lm
+LIBS = -lm -lcjson
 
 SRC = src
 BUILD = build
