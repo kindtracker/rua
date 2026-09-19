@@ -94,14 +94,14 @@ RuaMapEntry RuaTokenTypeToString[] = {
     {RUA_TOKEN_OPERATOR, "Operator"}, {RUA_TOKEN_EQUAL, "Equal"},
     {RUA_TOKEN_KEYWORD, "Keyword"},   {RUA_TOKEN_NONE, "<none>"}};
 
-RuaMapEntry RuaValueTypeToString[] = {{RUA_VALUE_IDENT, "IDENT"},
-                                      {RUA_VALUE_STRING, "STRING"},
-                                      {RUA_VALUE_NUMBER, "NUMBER"}};
+RuaMapEntry RuaValueTypeToString[] = {{RUA_VALUE_IDENT, "Ident"},
+                                      {RUA_VALUE_STRING, "String"},
+                                      {RUA_VALUE_NUMBER, "Number"}};
 
-RuaMapEntry RuaASTTypeToString[] = {{RUA_AST_CALL, "CALL"},
-                                    {RUA_AST_VAR_DECL, "VAR_DECL"},
-                                    {RUA_AST_FUNCTION, "FUNCTION"},
-                                    {RUA_AST_BLOCK, "BLOCK"}};
+RuaMapEntry RuaASTTypeToString[] = {{RUA_AST_CALL, "Call"},
+                                    {RUA_AST_VAR_DECL, "VarDecl"},
+                                    {RUA_AST_FUNCTION, "Function"},
+                                    {RUA_AST_BLOCK, "Block"}};
 #endif
 
 RuaState RuaNewState();
