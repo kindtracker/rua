@@ -74,7 +74,7 @@ function Rua:Tokenize(State)
       end
       Tokenizer:Advance(State)
 
-      print("String", State.FileContent:sub(StartIndex, State.FileIndex - 1))
+      print("String", State.FileContent:sub(StartIndex, State.FileIndex - 2))
     else
       break
     end
