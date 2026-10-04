@@ -3,8 +3,9 @@ local Rua = {}
 local BaseIdent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 local BasePunct = "(){}[];,:."
 local BaseDigits = "0123456789"
-local BaseOperators = "+-*/^%#"
+local BaseOperators = "=<>~&|+-*/^%#"
 local BaseEscape = ""
+local WhiteSpace = "\n\t\r "
 
 local function StringHasLetter(String, Letter)
   for Character in String:gmatch(".") do
@@ -62,6 +63,10 @@ function Rua:Tokenize(State)
       local Punct = Tokenizer:Advance(State)
 
       print("Punct", Punct)
+    elseif StringHasLetter(BaseOperators, State.TokenCharacter) then
+      local Operator = Tokenizer:Advance(State)
+
+      print("Operator", Operator)
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
       Tokenizer:Advance(State)
       local StartIndex = State.FileIndex
@@ -75,7 +80,10 @@ function Rua:Tokenize(State)
       Tokenizer:Advance(State)
 
       print("String", State.FileContent:sub(StartIndex, State.FileIndex - 2))
+    elseif StringHasLetter(WhiteSpace, State.TokenCharacter) then
+      Tokenizer:Advance(State)
     else
+      print("Unknown", State.TokenCharacter)
       break
     end
   end
