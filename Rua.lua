@@ -3,7 +3,7 @@ local Rua = {}
 local BaseIdent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 local BasePunct = "(){}[];,:."
 local BaseDigits = "0123456789"
-local BaseOperators = "=<>~&|+-*/^%#"
+local BaseOperators = "!=<>~&|+-*/^%#"
 local BaseEscape = ""
 
 local BaseKeywords = {
@@ -26,6 +26,9 @@ local BaseKeywords = {
   "then",
   "until",
   "while",
+  "true",
+  "false",
+  "nil",
 }
 
 local WhiteSpace = "\n\t\r "
@@ -100,8 +103,28 @@ function Rua:Tokenize(State)
       print("Punct", Punct)
     elseif StringHasLetter(BaseOperators, State.TokenCharacter) then
       local Operator = Tokenizer:Advance(State)
+      local IsComment = false
+      if Operator == "-" then
+        if State.TokenCharacter == "-" then
+          IsComment = true
+          while State.TokenCharacter ~= "\n" do
+            Tokenizer:Advance(State)
+          end
+        end
+      end
 
-      print("Operator", Operator)
+      if not IsComment then
+        print("Operator", Operator)
+      end
+    elseif StringHasLetter(BaseDigits, State.TokenCharacter) then
+      local StartIndex = State.FileIndex
+
+      while StringHasLetter(BaseDigits, State.TokenCharacter) do
+        Tokenizer:Advance(State)
+      end
+
+      local Number = State.FileContent:sub(StartIndex, State.FileIndex - 1)
+      print("Number", Number)
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
       Tokenizer:Advance(State)
       local StartIndex = State.FileIndex
