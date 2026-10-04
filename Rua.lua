@@ -5,11 +5,44 @@ local BasePunct = "(){}[];,:."
 local BaseDigits = "0123456789"
 local BaseOperators = "=<>~&|+-*/^%#"
 local BaseEscape = ""
+
+local BaseKeywords = {
+  "and",
+  "break",
+  "do",
+  "else",
+  "elseif",
+  "end",
+  "for",
+  "function",
+  "goto",
+  "if",
+  "in",
+  "local",
+  "not",
+  "or",
+  "repeat",
+  "return",
+  "then",
+  "until",
+  "while",
+}
+
 local WhiteSpace = "\n\t\r "
 
 local function StringHasLetter(String, Letter)
   for Character in String:gmatch(".") do
     if Character == Letter then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function TableHasString(Table, StringToSearch)
+  for _, String in ipairs(Table) do
+    if String == StringToSearch then
       return true
     end
   end
@@ -58,7 +91,9 @@ function Rua:Tokenize(State)
         Tokenizer:Advance(State)
       end
 
-      print("Ident", State.FileContent:sub(StartIndex, State.FileIndex - 1))
+      local Ident = State.FileContent:sub(StartIndex, State.FileIndex - 1)
+      local IsKeyword = TableHasString(BaseKeywords, Ident)
+      print(IsKeyword and "Keyword" or "Ident", Ident)
     elseif StringHasLetter(BasePunct, State.TokenCharacter) then
       local Punct = Tokenizer:Advance(State)
 
