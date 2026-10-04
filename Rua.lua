@@ -4,6 +4,16 @@ local BaseIdent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 local BaseDigits = "0123456789"
 local BaseOperators = "+-*/^%#"
 
+local function StringHasLetter(String, Letter)
+  for Character in String:gmatch(".") do
+    if Character == Letter then
+      return true
+    end
+  end
+
+  return false
+end
+
 function Rua.new()
   return {
     FileName = "",
@@ -23,7 +33,7 @@ local Tokenizer = {}
 
 function Tokenizer:Advance(State)
   State.FileIndex = State.FileIndex + 1
-  State.TokenCharacter = State.FileContent:sub(State.FileIndex, 1)
+  State.TokenCharacter = State.FileContent:sub(State.FileIndex, State.FileIndex)
 end
 
 function Tokenizer:Initialize(State)
@@ -34,7 +44,19 @@ end
 function Rua:Tokenize(State)
   Tokenizer:Initialize(State)
 
-  print(State.TokenCharacter)
+  while true do
+    if StringHasLetter(BaseIdent, State.TokenCharacter) then
+      local StartIndex = State.FileIndex
+
+      while StringHasLetter(BaseIdent, State.TokenCharacter) do
+        Tokenizer:Advance(State)
+      end
+
+      print("Ident", State.FileContent:sub(StartIndex, State.FileIndex - 1))
+    else
+      break
+    end
+  end
 end
 
 Rua.Tokenizer = Tokenizer
