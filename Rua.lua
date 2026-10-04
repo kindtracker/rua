@@ -1,6 +1,7 @@
 local Rua = {}
 
 local BaseIdent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+local BasePunct = "(){}[];,:."
 local BaseDigits = "0123456789"
 local BaseOperators = "+-*/^%#"
 
@@ -32,8 +33,11 @@ end
 local Tokenizer = {}
 
 function Tokenizer:Advance(State)
+  local Character = State.TokenCharacter
   State.FileIndex = State.FileIndex + 1
   State.TokenCharacter = State.FileContent:sub(State.FileIndex, State.FileIndex)
+
+  return Character
 end
 
 function Tokenizer:Initialize(State)
@@ -53,6 +57,10 @@ function Rua:Tokenize(State)
       end
 
       print("Ident", State.FileContent:sub(StartIndex, State.FileIndex - 1))
+    elseif StringHasLetter(BasePunct, State.TokenCharacter) then
+      local Punct = Tokenizer:Advance(State)
+
+      print("Punct", Punct)
     else
       break
     end
