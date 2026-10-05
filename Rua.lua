@@ -243,6 +243,34 @@ function Parser:Expect(State, ...)
   end
 end
 
+function Parser:ParseArgumentList(State)
+  local ArgumentList = {}
+
+  local Argument
+  while true do
+    _, Argument = Parser:Expect(State, "String")
+    table.insert(ArgumentList, Argument)
+
+    if State.CurrentToken.Value ~= "," then
+      break
+    else
+      Parser:Advance(State)
+    end
+  end
+
+  return ArgumentList
+end
+
+function Parser:ParseFunctionCall(State, Statement)
+  Statement.Type = "FunctionCall"
+  Statement.Arguments = Parser:ParseArgumentList(State)
+
+  Kind, Value = Parser:Expect(State, ")")
+  if Kind == nil then
+    return
+  end
+end
+
 function Parser:ParseStatement(State)
   local Statement = {}
 
@@ -258,14 +286,7 @@ function Parser:ParseStatement(State)
       return
     end
 
-    io.write("Test\n")
-    Statement.Type = "FunctionCall"
-    _, Statement.Arguments = Parser:Expect(State, "String")
-
-    Kind, Value = Parser:Expect(State, ")")
-    if Kind == nil then
-      return
-    end
+    Parser:ParseFunctionCall(State, Statement)
   end
 
   return Statement
