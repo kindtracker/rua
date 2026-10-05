@@ -212,7 +212,7 @@ function Logger:Error(State, ...)
       HighlightedWord,
       string.rep(" ", WordStart),
       Ansi.Red,
-      string.rep("~", WordLength),
+      string.rep("~", WordLength - 1),
       Ansi.Reset
     )
   )
