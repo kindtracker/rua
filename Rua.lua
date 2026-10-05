@@ -81,6 +81,12 @@ local ExpressionPrecedence = {
 
 local WhiteSpace = "\n\t\r "
 
+local Ansi = {
+  Reset = "\27[0m",
+  Yellow = "\27[33m",
+  Red = "\27[31m",
+}
+
 local function StringHasLetter(String, Letter)
   for Character in String:gmatch(".") do
     if Character == Letter then
@@ -118,6 +124,44 @@ local function PrintTable(Table, Level)
   io.write(string.rep("  ", Level) .. "}")
 end
 
+local function GetLine(Content, Line)
+  local CurrentLine = 1
+
+  for TextLine in Content:gmatch("[^\r\n]*\r?\n?") do
+    if TextLine == "" and CurrentLine > Line then
+      break
+    end
+
+    if CurrentLine == Line then
+      return TextLine:gsub("[\r\n]+$", "")
+    end
+
+    CurrentLine = CurrentLine + 1
+  end
+
+  return ""
+end
+
+local function GetWordStartAndFinish(Line, Row)
+  local Start = Row
+  local Finish = Row
+
+  while Start > 1 and Line:sub(Start - 1, Start - 1):match("[%w_]") do
+    Start = Start - 1
+  end
+
+  while Finish <= #Line and Line:sub(Finish, Finish):match("[%w_]") do
+    Finish = Finish + 1
+  end
+
+  return Start, Finish
+end
+
+local function HighlightWord(Line, Row)
+  local Start, Finish = GetWordStartAndFinish(Line, Row)
+  return Line:sub(1, Start - 1) .. Ansi.Red .. Line:sub(Start, Finish - 1) .. Ansi.Reset .. Line:sub(Finish)
+end
+
 function Rua.new()
   return {
     FileName = "",
@@ -149,24 +193,30 @@ end
 
 local Logger = {}
 
-local Ansi = {
-  Reset = "\27[0m",
-  Yellow = "\27[33m",
-  Red = "\27[31m",
-}
-
 function Logger:Error(State, ...)
+  local SourceLine = GetLine(State.FileContent, State.Line)
+  local HighlightedWord = HighlightWord(SourceLine, State.Row)
+
+  local WordStart, WordFinish = GetWordStartAndFinish(SourceLine, State.Row)
+  local WordLength = WordFinish - WordStart
+
   io.write(
     string.format(
-      "%s:%d:%d: %sError:%s %s\n",
+      "%s:%d:%d: %sError:%s %s\n%s\n%s%s^%s%s\n",
       State.FileName,
       State.Line,
       State.Row,
       Ansi.Red,
       Ansi.Reset,
-      string.format(...)
+      string.format(...),
+      HighlightedWord,
+      string.rep(" ", WordStart - 1),
+      Ansi.Red,
+      string.rep("~", WordLength - 1),
+      Ansi.Reset
     )
   )
+
   State.Stop = true
 end
 
