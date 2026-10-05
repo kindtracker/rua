@@ -483,7 +483,7 @@ end
 function Parser:ParseFunction(State, Statement)
   Statement.Type = "Function"
   Statement.Name = State.CurrentToken.Value
-  Parser:Advance(State, 1)
+  Parser:Advance(State)
   Statement.Arguments = Parser:ParseArgumentList(State)
   Statement.Body = Parser:ParseBlock(State)
 end
@@ -491,6 +491,13 @@ end
 function Parser:ParseReturn(State, Statement)
   Statement.Type = "Return"
   Statement.Value = Parser:ParseExpression(State)
+end
+
+function Parser:ParseIf(State, Statement)
+  Statement.Type = "If"
+  Statement.Condition = Parser:ParseExpression(State)
+  Parser:Advance(State)
+  Statement.Body = Parser:ParseBlock(State)
 end
 
 function Parser:ParseStatement(State, IsLocal)
@@ -523,7 +530,13 @@ function Parser:ParseStatement(State, IsLocal)
       Parser:ParseFunction(State, Statement)
     elseif Value == "return" then
       Parser:ParseReturn(State, Statement)
+    elseif Value == "if" then
+      Parser:ParseIf(State, Statement)
+    else
+      Logger:Error(State, "Unhandled keyword: %s", Value)
     end
+  else
+    Logger:Error(State, "Unhandled token kind: %s", Value)
   end
 
   return Statement

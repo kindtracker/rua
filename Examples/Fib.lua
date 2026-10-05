@@ -7,4 +7,4 @@ local function Fib(Number)
   return Fib(Number - 1) + Fib(Number - 2)
 end
 
-print(Fib(8))
+print(Fib(12))
