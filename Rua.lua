@@ -449,10 +449,10 @@ function Parser:ParseVariableAssign(State, Statement)
   Statement.Value = Parser:ParseExpression(State)
 end
 
-function Parser:ParseStatement(State)
-  local Statement = {}
+function Parser:ParseStatement(State, IsLocal)
+  local Statement = { Local = IsLocal or false }
 
-  local Kind, Value = Parser:Expect(State, "Ident")
+  local Kind, Value = Parser:Expect(State, "Ident", "Keyword")
   if Kind == nil then
     return
   end
@@ -471,6 +471,10 @@ function Parser:ParseStatement(State)
       Parser:ParseVariableAssign(State, Statement)
     else
       io.write(string.format("Rua: Expected '(' or '=' but got '%s'\n", State.CurrentToken.Value))
+    end
+  elseif Kind == "Keyword" then
+    if Value == "local" then
+      return Parser:ParseStatement(State, true)
     end
   end
 

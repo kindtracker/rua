@@ -1,1 +1,1 @@
-Variable = 2
+local Variable = 2
