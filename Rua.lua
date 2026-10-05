@@ -53,19 +53,38 @@ local function TableHasString(Table, StringToSearch)
   return false
 end
 
+local function PrintTable(Table, Level)
+  Level = Level or 0
+
+  io.write(string.rep("  ", Level) .. "{\n")
+  for Key, Value in pairs(Table) do
+    if type(Value) == "table" then
+      io.write(string.rep("  ", Level + 1) .. string.format("[%q] = {", Key))
+      PrintTable(Value, Level + 1)
+    else
+      io.write(string.rep("  ", Level + 1) .. string.format("[%q] = %q", Key, Value))
+    end
+    io.write(",\n")
+  end
+
+  io.write(string.rep("  ", Level) .. "}")
+end
+
 function Rua.new()
   return {
     FileName = "",
     FileContent = "",
     FileIndex = 0,
     TokenCharacter = "",
+    Tokens = {},
   }
 end
 
 function Rua:Run(State, FileName)
   State.FileName = FileName
   State.FileContent = io.open(FileName, "r"):read("*a")
-  local Tokens = Rua:Tokenize(State)
+  Rua:Tokenize(State)
+  PrintTable(State.Tokens)
 end
 
 local Tokenizer = {}
@@ -83,6 +102,10 @@ function Tokenizer:Initialize(State)
   Tokenizer:Advance(State)
 end
 
+function Tokenizer:AddToken(State, Kind, Value)
+  table.insert(State.Tokens, { Kind = Kind, Value = Value })
+end
+
 function Rua:Tokenize(State)
   Tokenizer:Initialize(State)
 
@@ -96,11 +119,11 @@ function Rua:Tokenize(State)
 
       local Ident = State.FileContent:sub(StartIndex, State.FileIndex - 1)
       local IsKeyword = TableHasString(BaseKeywords, Ident)
-      print(IsKeyword and "Keyword" or "Ident", Ident)
+      Tokenizer:AddToken(State, IsKeyword and "Keyword" or "Ident", Ident)
     elseif StringHasLetter(BasePunct, State.TokenCharacter) then
       local Punct = Tokenizer:Advance(State)
 
-      print("Punct", Punct)
+      Tokenizer:AddToken(State, "Punct", Punct)
     elseif StringHasLetter(BaseOperators, State.TokenCharacter) then
       local Operator = Tokenizer:Advance(State)
       local IsComment = false
@@ -114,7 +137,7 @@ function Rua:Tokenize(State)
       end
 
       if not IsComment then
-        print("Operator", Operator)
+        Tokenizer:AddToken(State, "Operator", Operator)
       end
     elseif StringHasLetter(BaseDigits, State.TokenCharacter) then
       local StartIndex = State.FileIndex
@@ -124,7 +147,7 @@ function Rua:Tokenize(State)
       end
 
       local Number = State.FileContent:sub(StartIndex, State.FileIndex - 1)
-      print("Number", Number)
+      Tokenizer:AddToken(State, "Number", Number)
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
       Tokenizer:Advance(State)
       local StartIndex = State.FileIndex
@@ -137,11 +160,14 @@ function Rua:Tokenize(State)
       end
       Tokenizer:Advance(State)
 
-      print("String", State.FileContent:sub(StartIndex, State.FileIndex - 2))
+      Tokenizer:AddToken(State, "String", State.FileContent:sub(StartIndex, State.FileIndex - 2))
     elseif StringHasLetter(WhiteSpace, State.TokenCharacter) then
       Tokenizer:Advance(State)
     else
-      print("Unknown", State.TokenCharacter)
+      if State.FileIndex > #State.FileContent then
+      else
+        print("Unknown", State.TokenCharacter)
+      end
       break
     end
   end
