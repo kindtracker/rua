@@ -435,6 +435,11 @@ function Parser:ParseFunctionCall(State, Statement)
   end
 end
 
+function Parser:ParseVariableAssign(State, Statement)
+  Statement.Type = "VariableAssign"
+  Statement.Value = Parser:ParseExpression(State)
+end
+
 function Parser:ParseStatement(State)
   local Statement = {}
 
@@ -443,14 +448,19 @@ function Parser:ParseStatement(State)
     return
   end
 
-  -- FunctionCall
   if Kind == "Ident" then
-    Kind, Value = Parser:Expect(State, "(")
+    Kind, Value = Parser:Expect(State, "Punct", "Operator")
     if Kind == nil then
       return
     end
 
-    Parser:ParseFunctionCall(State, Statement)
+    if Value == "(" then
+      Parser:ParseFunctionCall(State, Statement)
+    elseif Value == "=" then
+      Parser:ParseVariableAssign(State, Statement)
+    else
+      io.write(string.format("Rua: Expected '(' or '=' but got '%s'\n", State.CurrentToken.Value))
+    end
   end
 
   return Statement
