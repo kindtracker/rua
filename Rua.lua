@@ -33,6 +33,37 @@ local BaseKeywords = {
   "nil",
 }
 
+local ExpressionPrecedence = {
+  ["or"] = 1,
+  ["and"] = 2,
+
+  ["=="] = 3,
+  ["~="] = 3,
+  ["<"] = 3,
+  [">"] = 3,
+  ["<="] = 3,
+  [">="] = 3,
+
+  ["|"] = 4,
+  ["~"] = 5,
+  ["&"] = 6,
+
+  ["<<"] = 7,
+  [">>"] = 7,
+
+  [".."] = 8,
+
+  ["+"] = 9,
+  ["-"] = 9,
+
+  ["*"] = 10,
+  ["/"] = 10,
+  ["//"] = 10,
+  ["%"] = 10,
+
+  ["^"] = 11,
+}
+
 local WhiteSpace = "\n\t\r "
 
 local function StringHasLetter(String, Letter)
@@ -243,14 +274,117 @@ function Parser:Expect(State, ...)
   end
 end
 
-function Parser:ParseExpression(State)
-  local Node = {}
-  Node.Type = "Expression"
+function Parser:GetExpressionPrecedence(State)
+  if State.CurrentToken == nil then
+    return nil
+  end
 
-  _, Node.Value = Parser:Expect(State, "Ident", "Number", "String")
-  print(Node.Value)
+  return ExpressionPrecedence[State.CurrentToken.Value]
+end
 
-  return Node
+function Parser:ParsePrimaryExpression(State)
+  if State.CurrentToken == nil then
+    return nil
+  end
+
+  local Token = State.CurrentToken
+
+  if Token.Kind == "Ident" then
+    Parser:Advance(State)
+
+    return {
+      Type = "Identifier",
+      Value = Token.Value,
+    }
+  end
+
+  if Token.Kind == "Number" then
+    Parser:Advance(State)
+
+    return {
+      Type = "Number",
+      Value = Token.Value,
+    }
+  end
+
+  if Token.Kind == "String" then
+    Parser:Advance(State)
+
+    return {
+      Type = "String",
+      Value = Token.Value,
+    }
+  end
+
+  if Token.Value == "true" or Token.Value == "false" then
+    Parser:Advance(State)
+
+    return {
+      Type = "Boolean",
+      Value = Token.Value == "true",
+    }
+  end
+
+  if Token.Value == "nil" then
+    Parser:Advance(State)
+
+    return {
+      Type = "Nil",
+      Value = nil,
+    }
+  end
+
+  if Token.Value == "(" then
+    Parser:Advance(State)
+
+    local Expression = Parser:ParseExpression(State)
+
+    local Kind = Parser:Expect(State, ")")
+    if Kind == nil then
+      return nil
+    end
+
+    return Expression
+  end
+
+  return nil
+end
+
+function Parser:ParseExpression(State, MinimumPrecedence)
+  MinimumPrecedence = MinimumPrecedence or 0
+
+  local Left = Parser:ParsePrimaryExpression(State)
+
+  if Left == nil then
+    return nil
+  end
+
+  while State.CurrentToken ~= nil do
+    local Operator = State.CurrentToken.Value
+    local Precedence = Parser:GetExpressionPrecedence(State)
+
+    if Precedence == nil or Precedence < MinimumPrecedence then
+      break
+    end
+
+    Parser:Advance(State)
+
+    local Right = Parser:ParseExpression(State, Precedence + 1)
+
+    if Right == nil then
+      State.Stop = true
+      return nil
+    end
+
+    Left = {
+      Type = "BinaryExpression",
+      Operator = Operator,
+      Left = Left,
+      Right = Right,
+    }
+  end
+
+  return Left
 end
 
 function Parser:ParseArgumentList(State)
