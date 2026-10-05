@@ -119,8 +119,11 @@ end
 function Rua:Run(State, FileName)
   State.FileName = FileName
   State.FileContent = io.open(FileName, "r"):read("*a")
+
   Rua:Tokenize(State)
   PrintTable(State.Tokens)
+  io.write("\n")
+
   Rua:Parse(State)
   PrintTable(State.Ast)
   io.write("\n")
@@ -237,9 +240,11 @@ end
 
 local Parser = {}
 
-function Parser:Advance(State)
+function Parser:Advance(State, Step)
+  Step = Step or 1
+
   local PreviousToken = State.CurrentToken
-  State.TokenIndex = State.TokenIndex + 1
+  State.TokenIndex = State.TokenIndex + Step
   State.CurrentToken = State.Tokens[State.TokenIndex]
 end
 
@@ -427,6 +432,8 @@ end
 
 function Parser:ParseFunctionCall(State, Statement)
   Statement.Type = "FunctionCall"
+  Statement.Name = State.CurrentToken.Value
+  Parser:Advance(State, 2)
   Statement.Arguments = Parser:ParseArgumentList(State)
 
   Kind, Value = Parser:Expect(State, ")")
@@ -437,6 +444,8 @@ end
 
 function Parser:ParseVariableAssign(State, Statement)
   Statement.Type = "VariableAssign"
+  Statement.Name = State.CurrentToken.Value
+  Parser:Advance(State, 2)
   Statement.Value = Parser:ParseExpression(State)
 end
 
@@ -455,8 +464,10 @@ function Parser:ParseStatement(State)
     end
 
     if Value == "(" then
+      Parser:Advance(State, -2)
       Parser:ParseFunctionCall(State, Statement)
     elseif Value == "=" then
+      Parser:Advance(State, -2)
       Parser:ParseVariableAssign(State, Statement)
     else
       io.write(string.format("Rua: Expected '(' or '=' but got '%s'\n", State.CurrentToken.Value))
