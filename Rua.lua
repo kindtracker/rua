@@ -127,6 +127,9 @@ function Rua.new()
     Tokens = {},
     Ast = {},
     TokenIndex = 0,
+    CurrentToken = {},
+    Line = 1,
+    Row = 1,
     Stop = false,
   }
 end
@@ -153,7 +156,17 @@ local Ansi = {
 }
 
 function Logger:Error(State, ...)
-  io.write(string.format("%s: %sError:%s %s\n", State.FileName, Ansi.Red, Ansi.Reset, string.format(...)))
+  io.write(
+    string.format(
+      "%s:%d:%d: %sError:%s %s\n",
+      State.FileName,
+      State.Line,
+      State.Row,
+      Ansi.Red,
+      Ansi.Reset,
+      string.format(...)
+    )
+  )
   State.Stop = true
 end
 
@@ -161,7 +174,16 @@ local Tokenizer = {}
 
 function Tokenizer:Advance(State)
   local Character = State.TokenCharacter
+
   State.FileIndex = State.FileIndex + 1
+
+  if Character == "\n" then
+    State.Line = State.Line + 1
+    State.Row = 1
+  else
+    State.Row = State.Row + 1
+  end
+
   State.TokenCharacter = State.FileContent:sub(State.FileIndex, State.FileIndex)
 
   return Character
@@ -169,11 +191,13 @@ end
 
 function Tokenizer:Initialize(State)
   State.FileIndex = 0
-  Tokenizer:Advance(State)
+  State.Line = 1
+  State.Row = 1
+  State.TokenCharacter = State.FileContent:sub(1, 1)
 end
 
 function Tokenizer:AddToken(State, Kind, Value)
-  table.insert(State.Tokens, { Kind = Kind, Value = Value })
+  table.insert(State.Tokens, { Kind = Kind, Value = Value, Line = State.Line, Row = State.Row })
 end
 
 function Rua:Tokenize(State)
@@ -186,18 +210,25 @@ function Rua:Tokenize(State)
 
     if StringHasLetter(BaseIdent, State.TokenCharacter) then
       local StartIndex = State.FileIndex
+      local StartRow = State.Row
 
       while StringHasLetter(BaseIdent, State.TokenCharacter) do
         Tokenizer:Advance(State)
       end
+      local EndRow = State.Row
 
       local Ident = State.FileContent:sub(StartIndex, State.FileIndex - 1)
       local IsKeyword = TableHasString(BaseKeywords, Ident)
+
+      State.Row = StartRow
       Tokenizer:AddToken(State, IsKeyword and "Keyword" or "Ident", Ident)
+      State.Row = EndRow
     elseif StringHasLetter(BasePunct, State.TokenCharacter) then
       local Punct = Tokenizer:Advance(State)
 
+      State.Row = State.Row - 1
       Tokenizer:AddToken(State, "Punct", Punct)
+      State.Row = State.Row + 1
     elseif StringHasLetter(BaseOperators, State.TokenCharacter) then
       local Operator = Tokenizer:Advance(State)
       local IsComment = false
@@ -274,6 +305,8 @@ function Parser:Advance(State, Step)
   local PreviousToken = State.CurrentToken
   State.TokenIndex = State.TokenIndex + Step
   State.CurrentToken = State.Tokens[State.TokenIndex]
+  State.Line = State.CurrentToken.Line
+  State.Row = State.CurrentToken.Row
 end
 
 function Parser:Initalize(State)
