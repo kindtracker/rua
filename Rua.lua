@@ -77,6 +77,9 @@ function Rua.new()
     FileIndex = 0,
     TokenCharacter = "",
     Tokens = {},
+    Ast = {},
+    TokenIndex = 0,
+    Stop = false,
   }
 end
 
@@ -84,7 +87,9 @@ function Rua:Run(State, FileName)
   State.FileName = FileName
   State.FileContent = io.open(FileName, "r"):read("*a")
   Rua:Tokenize(State)
-  PrintTable(State.Tokens)
+  Rua:Parse(State)
+  PrintTable(State.Ast)
+  io.write("\n")
 end
 
 local Tokenizer = {}
@@ -110,6 +115,10 @@ function Rua:Tokenize(State)
   Tokenizer:Initialize(State)
 
   while true do
+    if State.Stop then
+      break
+    end
+
     if StringHasLetter(BaseIdent, State.TokenCharacter) then
       local StartIndex = State.FileIndex
 
@@ -173,6 +182,44 @@ function Rua:Tokenize(State)
   end
 end
 
+local Parser = {}
+
+function Parser:Advance(State)
+  local PreviousToken = State.CurrentToken
+  State.TokenIndex = State.TokenIndex + 1
+  State.CurrentToken = State.Tokens[State.TokenIndex]
+  if State.CurrentToken == nil then
+    print(string.format("Rua: Tried to advance token but got nil (Previous token: %s)", PreviousToken))
+    State.Stop = true
+  end
+end
+
+function Parser:Initalize(State)
+  State.Stop = false
+  State.Ast = {}
+  State.TokenIndex = 0
+  State.CurrentToken = Parser:Advance(State)
+end
+
+function Parser:ParseStatement(State)
+  State.Stop = true
+  return {}
+end
+
+function Rua:Parse(State)
+  Parser:Initalize(State)
+
+  while true do
+    if State.Stop then
+      break
+    end
+
+    local Statement = Parser:ParseStatement(State)
+    table.insert(State.Ast, Statement)
+  end
+end
+
 Rua.Tokenizer = Tokenizer
+Rua.Parser = Parser
 
 return Rua
