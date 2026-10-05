@@ -1,5 +1,7 @@
 local Rua = {}
 
+local _
+
 local BaseIdent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 local BasePunct = "(){}[];,:."
 local BaseDigits = "0123456789"
@@ -209,9 +211,10 @@ function Parser:Expect(State, ...)
   local AllTokenKinds = { "Ident", "Punct", "Number", "Operator", "String" }
   if TableHasString(AllTokenKinds, Arguments[1]) then
     if TableHasString(Arguments, State.CurrentToken.Kind) then
-      local Return = State.CurrentToken.Kind, State.CurrentToken.Value
+      local Kind = State.CurrentToken.Kind
+      local Value = State.CurrentToken.Value
       Parser:Advance(State)
-      return Return
+      return Kind, Value
     end
 
     local HumanExpectedTokens = ""
@@ -233,9 +236,10 @@ function Parser:Expect(State, ...)
       return nil, nil
     end
 
-    local Return = State.CurrentToken.Kind, State.CurrentToken.Value
+    local Kind = State.CurrentToken.Kind
+    local Value = State.CurrentToken.Value
     Parser:Advance(State)
-    return Return
+    return Kind, Value
   end
 end
 
@@ -255,8 +259,8 @@ function Parser:ParseStatement(State)
     end
 
     io.write("Test\n")
-    State.Type = "FunctionCall"
-    State.Arguments = Parser:Expect(State, "String")
+    Statement.Type = "FunctionCall"
+    _, Statement.Arguments = Parser:Expect(State, "String")
 
     Kind, Value = Parser:Expect(State, ")")
     if Kind == nil then
