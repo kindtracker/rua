@@ -28,9 +28,6 @@ local BaseKeywords = {
   "then",
   "until",
   "while",
-  "true",
-  "false",
-  "nil",
 }
 
 local ExpressionPrecedence = {
@@ -430,6 +427,27 @@ function Parser:ParseArgumentList(State)
   return ArgumentList
 end
 
+function Parser:ParseBlock(State)
+  local Body = {}
+
+  while true do
+    if State.Stop then
+      break
+    elseif State.CurrentToken.Kind == "Keyword" and State.CurrentToken.Value == "end" then
+      break
+    end
+
+    local Statement = Parser:ParseStatement(State)
+
+    if Statement ~= nil then
+      table.insert(Body, Statement)
+    end
+  end
+  Parser:Expect(State, "end")
+
+  return Body
+end
+
 function Parser:ParseFunctionCall(State, Statement)
   Statement.Type = "FunctionCall"
   Statement.Name = State.CurrentToken.Value
@@ -447,6 +465,14 @@ function Parser:ParseVariableAssign(State, Statement)
   Statement.Name = State.CurrentToken.Value
   Parser:Advance(State, 2)
   Statement.Value = Parser:ParseExpression(State)
+end
+
+function Parser:ParseFunction(State, Statement)
+  Statement.Type = "Function"
+  Statement.Name = State.CurrentToken.Value
+  Parser:Advance(State, 1)
+  Statement.Arguments = Parser:ParseArgumentList(State)
+  Statement.Body = Parser:ParseBlock(State)
 end
 
 function Parser:ParseStatement(State, IsLocal)
@@ -475,6 +501,8 @@ function Parser:ParseStatement(State, IsLocal)
   elseif Kind == "Keyword" then
     if Value == "local" then
       return Parser:ParseStatement(State, true)
+    elseif Value == "function" then
+      Parser:ParseFunction(State, Statement)
     end
   end
 
