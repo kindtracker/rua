@@ -175,7 +175,7 @@ function Rua:Tokenize(State)
     else
       if State.FileIndex > #State.FileContent then
       else
-        print("Unknown", State.TokenCharacter)
+        io.write(string.format("Rua: Couldn't tokenize %s\n", State.TokenCharacter))
       end
       break
     end
@@ -189,7 +189,7 @@ function Parser:Advance(State)
   State.TokenIndex = State.TokenIndex + 1
   State.CurrentToken = State.Tokens[State.TokenIndex]
   if State.CurrentToken == nil then
-    print(string.format("Rua: Tried to advance token but got nil (Previous token: %s)", PreviousToken))
+    io.write(string.format("Rua: Tried to advance token but got nil (Previous token: %s)\n", PreviousToken))
     State.Stop = true
   end
 end
