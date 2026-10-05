@@ -120,6 +120,7 @@ function Rua:Run(State, FileName)
   State.FileName = FileName
   State.FileContent = io.open(FileName, "r"):read("*a")
   Rua:Tokenize(State)
+  PrintTable(State.Tokens)
   Rua:Parse(State)
   PrintTable(State.Ast)
   io.write("\n")
@@ -169,12 +170,31 @@ function Rua:Tokenize(State)
     elseif StringHasLetter(BaseOperators, State.TokenCharacter) then
       local Operator = Tokenizer:Advance(State)
       local IsComment = false
+
       if Operator == "-" then
         if State.TokenCharacter == "-" then
           IsComment = true
           while State.TokenCharacter ~= "\n" do
             Tokenizer:Advance(State)
           end
+        end
+      elseif Operator == "=" or Operator == "~" or Operator == ">" or Operator == "<" or Operator == "|" then
+        if State.TokenCharacter == "=" then
+          Operator = Operator .. "="
+          Tokenizer:Advance(State)
+        elseif State.TokenCharacter == ">" or Operator.TokenCharacter == "<" then
+          Operator = Operator .. "="
+          Tokenizer:Advance(State)
+        end
+      elseif Operator == "." then
+        if State.TokenCharacter == "." then
+          Operator = ".."
+          Tokenizer:Advance(State)
+        end
+      elseif Operator == "/" then
+        if State.TokenCharacter == "/" then
+          Operator = "//"
+          Tokenizer:Advance(State)
         end
       end
 
