@@ -529,6 +529,10 @@ function Parser:ParseIf(State, Statement)
   if State.CurrentToken.Value == "else" then
     Parser:Advance(State)
     Statement.Else = Parser:ParseBlock(State, "end")
+  elseif State.CurrentToken.Value == "elseif" then
+    Parser:Advance(State)
+    Statement.ElseIf = {}
+    Statement.Elseif = Parser:ParseIf(State, Statement.ElseIf, "end", "elseif", "else")
   end
 end
 
