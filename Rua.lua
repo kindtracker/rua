@@ -126,6 +126,19 @@ function Rua:Run(State, FileName)
   io.write("\n")
 end
 
+local Logger = {}
+
+local Ansi = {
+  Reset = "\27[0m",
+  Yellow = "\27[33m",
+  Red = "\27[31m",
+}
+
+function Logger:Error(State, ...)
+  io.write(string.format("%s: %sError:%s %s\n", State.FileName, Ansi.Red, Ansi.Reset, string.format(...)))
+  State.Stop = true
+end
+
 local Tokenizer = {}
 
 function Tokenizer:Advance(State)
@@ -228,7 +241,7 @@ function Rua:Tokenize(State)
     else
       if State.FileIndex > #State.FileContent then
       else
-        io.write(string.format("Rua: Couldn't tokenize %s\n", State.TokenCharacter))
+        Logger:Error(State, "Unexpected character: '%s'", State.TokenCharacter)
       end
       break
     end
@@ -256,7 +269,7 @@ function Parser:Expect(State, ...)
   local Arguments = table.pack(...)
 
   if State.CurrentToken == nil then
-    io.write("Rua: Unexpected end of file\n")
+    Logger:Error(State, "Unexpected end of file")
     State.Stop = true
     return nil, nil
   end
@@ -279,12 +292,12 @@ function Parser:Expect(State, ...)
       HumanExpectedTokens = HumanExpectedTokens .. string.format("'%s'", Value)
     end
 
-    io.write(string.format("Rua: Expected %s but got '%s'\n", HumanExpectedTokens, State.CurrentToken.Kind))
+    Logger:Error(State, "Expected %s but got '%s'", HumanExpectedTokens, State.CurrentToken.Kind)
     State.Stop = true
     return nil, nil
   else
     if State.CurrentToken.Value ~= Arguments[1] then
-      io.write(string.format("Rua: Expected '%s' but got '%s'\n", Arguments[1], State.CurrentToken.Value))
+      Logger:Error(State, "Expected '%s' but got '%s'", Arguments[1], State.CurrentToken.Value)
       State.Stop = true
       return nil, nil
     end
@@ -496,7 +509,7 @@ function Parser:ParseStatement(State, IsLocal)
       Parser:Advance(State, -2)
       Parser:ParseVariableAssign(State, Statement)
     else
-      io.write(string.format("Rua: Expected '(' or '=' but got '%s'\n", State.CurrentToken.Value))
+      Logger:Error(State, "Expected '(' or '=' but got '%s'", State.CurrentToken.Value)
     end
   elseif Kind == "Keyword" then
     if Value == "local" then
@@ -525,6 +538,7 @@ function Rua:Parse(State)
   end
 end
 
+Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
 
