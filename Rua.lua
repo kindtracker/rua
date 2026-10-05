@@ -274,16 +274,27 @@ function Parser:Expect(State, ...)
     return nil, nil
   end
 
-  local AllTokenKinds = { "Ident", "Punct", "Number", "Operator", "String" }
+  local AllTokenKinds = {
+    "Ident",
+    "Punct",
+    "Number",
+    "Operator",
+    "String",
+    "Keyword",
+  }
+
   if TableHasString(AllTokenKinds, Arguments[1]) then
     if TableHasString(Arguments, State.CurrentToken.Kind) then
       local Kind = State.CurrentToken.Kind
       local Value = State.CurrentToken.Value
+
       Parser:Advance(State)
+
       return Kind, Value
     end
 
     local HumanExpectedTokens = ""
+
     for Index, Value in ipairs(Arguments) do
       if Index > 1 then
         HumanExpectedTokens = HumanExpectedTokens .. " or "
@@ -293,20 +304,36 @@ function Parser:Expect(State, ...)
     end
 
     Logger:Error(State, "Expected %s but got '%s'", HumanExpectedTokens, State.CurrentToken.Kind)
+
     State.Stop = true
     return nil, nil
-  else
-    if State.CurrentToken.Value ~= Arguments[1] then
-      Logger:Error(State, "Expected '%s' but got '%s'", Arguments[1], State.CurrentToken.Value)
-      State.Stop = true
-      return nil, nil
+  end
+
+  for Index = 1, Arguments.n do
+    if State.CurrentToken.Value == Arguments[Index] then
+      local Kind = State.CurrentToken.Kind
+      local Value = State.CurrentToken.Value
+
+      Parser:Advance(State)
+
+      return Kind, Value
+    end
+  end
+
+  local HumanExpectedTokens = ""
+
+  for Index = 1, Arguments.n do
+    if Index > 1 then
+      HumanExpectedTokens = HumanExpectedTokens .. " or "
     end
 
-    local Kind = State.CurrentToken.Kind
-    local Value = State.CurrentToken.Value
-    Parser:Advance(State)
-    return Kind, Value
+    HumanExpectedTokens = HumanExpectedTokens .. string.format("'%s'", Arguments[Index])
   end
+
+  Logger:Error(State, "Expected %s but got '%s'", HumanExpectedTokens, State.CurrentToken.Value)
+
+  State.Stop = true
+  return nil, nil
 end
 
 function Parser:GetExpressionPrecedence(State)
@@ -440,13 +467,13 @@ function Parser:ParseArgumentList(State)
   return ArgumentList
 end
 
-function Parser:ParseBlock(State)
+function Parser:ParseBlock(State, ...)
   local Body = {}
 
   while true do
     if State.Stop then
       break
-    elseif State.CurrentToken.Kind == "Keyword" and State.CurrentToken.Value == "end" then
+    elseif State.CurrentToken.Kind == "Keyword" and TableHasString({ ... }, State.CurrentToken.Value) then
       break
     end
 
@@ -456,7 +483,7 @@ function Parser:ParseBlock(State)
       table.insert(Body, Statement)
     end
   end
-  Parser:Expect(State, "end")
+  Parser:Expect(State, ...)
 
   return Body
 end
@@ -497,7 +524,12 @@ function Parser:ParseIf(State, Statement)
   Statement.Type = "If"
   Statement.Condition = Parser:ParseExpression(State)
   Parser:Advance(State)
-  Statement.Body = Parser:ParseBlock(State)
+  Statement.Body = Parser:ParseBlock(State, "end", "elseif", "else")
+  Parser:Advance(State, -1)
+  if State.CurrentToken.Value == "else" then
+    Parser:Advance(State)
+    Statement.Else = Parser:ParseBlock(State, "end")
+  end
 end
 
 function Parser:ParseStatement(State, IsLocal)
