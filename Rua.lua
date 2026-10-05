@@ -243,13 +243,23 @@ function Parser:Expect(State, ...)
   end
 end
 
+function Parser:ParseExpression(State)
+  local Node = {}
+  Node.Type = "Expression"
+
+  _, Node.Value = Parser:Expect(State, "Ident", "Number", "String")
+  print(Node.Value)
+
+  return Node
+end
+
 function Parser:ParseArgumentList(State)
   local ArgumentList = {}
 
   local Argument
   while true do
-    _, Argument = Parser:Expect(State, "String")
-    table.insert(ArgumentList, Argument)
+    ArgumentNode = Parser:ParseExpression(State)
+    table.insert(ArgumentList, ArgumentNode)
 
     if State.CurrentToken.Value ~= "," then
       break
