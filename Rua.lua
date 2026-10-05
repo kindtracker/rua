@@ -202,7 +202,7 @@ function Logger:Error(State, ...)
 
   io.write(
     string.format(
-      "%s:%d:%d: %sError:%s %s\n%s\n%s%s^%s%s\n",
+      "%s:%d:%d: %sError:%s %s\n %s\n%s%s^%s%s\n",
       State.FileName,
       State.Line,
       State.Row,
@@ -210,9 +210,9 @@ function Logger:Error(State, ...)
       Ansi.Reset,
       string.format(...),
       HighlightedWord,
-      string.rep(" ", WordStart - 1),
+      string.rep(" ", WordStart),
       Ansi.Red,
-      string.rep("~", WordLength - 1),
+      string.rep("~", WordLength),
       Ansi.Reset
     )
   )
