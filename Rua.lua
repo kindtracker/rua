@@ -701,4 +701,12 @@ Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
 
+-- File -> Tokenizer -> Tokens -> Parser -> Ast ->
+-- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
+-- Stack VM
+
+-- TODO: Make Ir generator, code generator, and VM (stack-based)
+-- TODO: Handle strings properly (handle escape)
+-- TODO: Handle hex and binary numbers
+
 return Rua
