@@ -355,8 +355,10 @@ function Parser:Advance(State, Step)
   local PreviousToken = State.CurrentToken
   State.TokenIndex = State.TokenIndex + Step
   State.CurrentToken = State.Tokens[State.TokenIndex]
-  State.Line = State.CurrentToken.Line
-  State.Row = State.CurrentToken.Row
+  if State.CurrentToken then
+    State.Line = State.CurrentToken.Line
+    State.Row = State.CurrentToken.Row
+  end
 end
 
 function Parser:Initalize(State)
