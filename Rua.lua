@@ -188,34 +188,98 @@ function Parser:Advance(State)
   local PreviousToken = State.CurrentToken
   State.TokenIndex = State.TokenIndex + 1
   State.CurrentToken = State.Tokens[State.TokenIndex]
-  if State.CurrentToken == nil then
-    io.write(string.format("Rua: Tried to advance token but got nil (Previous token: %s)\n", PreviousToken))
-    State.Stop = true
-  end
 end
 
 function Parser:Initalize(State)
   State.Stop = false
   State.Ast = {}
   State.TokenIndex = 0
-  State.CurrentToken = Parser:Advance(State)
+  Parser:Advance(State)
+end
+
+function Parser:Expect(State, ...)
+  local Arguments = table.pack(...)
+
+  if State.CurrentToken == nil then
+    io.write("Rua: Unexpected end of file\n")
+    State.Stop = true
+    return nil, nil
+  end
+
+  local AllTokenKinds = { "Ident", "Punct", "Number", "Operator", "String" }
+  if TableHasString(AllTokenKinds, Arguments[1]) then
+    if TableHasString(Arguments, State.CurrentToken.Kind) then
+      local Return = State.CurrentToken.Kind, State.CurrentToken.Value
+      Parser:Advance(State)
+      return Return
+    end
+
+    local HumanExpectedTokens = ""
+    for Index, Value in ipairs(Arguments) do
+      if Index > 1 then
+        HumanExpectedTokens = HumanExpectedTokens .. " or "
+      end
+
+      HumanExpectedTokens = HumanExpectedTokens .. string.format("'%s'", Value)
+    end
+
+    io.write(string.format("Rua: Expected %s but got '%s'\n", HumanExpectedTokens, State.CurrentToken.Kind))
+    State.Stop = true
+    return nil, nil
+  else
+    if State.CurrentToken.Value ~= Arguments[1] then
+      io.write(string.format("Rua: Expected '%s' but got '%s'\n", Arguments[1], State.CurrentToken.Value))
+      State.Stop = true
+      return nil, nil
+    end
+
+    local Return = State.CurrentToken.Kind, State.CurrentToken.Value
+    Parser:Advance(State)
+    return Return
+  end
 end
 
 function Parser:ParseStatement(State)
-  State.Stop = true
-  return {}
+  local Statement = {}
+
+  local Kind, Value = Parser:Expect(State, "Ident")
+  if Kind == nil then
+    return
+  end
+
+  -- FunctionCall
+  if Kind == "Ident" then
+    Kind, Value = Parser:Expect(State, "(")
+    if Kind == nil then
+      return
+    end
+
+    io.write("Test\n")
+    State.Type = "FunctionCall"
+    State.Arguments = Parser:Expect(State, "String")
+
+    Kind, Value = Parser:Expect(State, ")")
+    if Kind == nil then
+      return
+    end
+  end
+
+  return Statement
 end
 
 function Rua:Parse(State)
   Parser:Initalize(State)
 
-  while true do
+  while State.CurrentToken ~= nil do
     if State.Stop then
       break
     end
 
     local Statement = Parser:ParseStatement(State)
-    table.insert(State.Ast, Statement)
+
+    if Statement ~= nil then
+      table.insert(State.Ast, Statement)
+    end
   end
 end
 
