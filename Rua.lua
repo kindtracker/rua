@@ -488,6 +488,11 @@ function Parser:ParseFunction(State, Statement)
   Statement.Body = Parser:ParseBlock(State)
 end
 
+function Parser:ParseReturn(State, Statement)
+  Statement.Type = "Return"
+  Statement.Value = Parser:ParseExpression(State)
+end
+
 function Parser:ParseStatement(State, IsLocal)
   local Statement = { Local = IsLocal or false }
 
@@ -516,6 +521,8 @@ function Parser:ParseStatement(State, IsLocal)
       return Parser:ParseStatement(State, true)
     elseif Value == "function" then
       Parser:ParseFunction(State, Statement)
+    elseif Value == "return" then
+      Parser:ParseReturn(State, Statement)
     end
   end
 
