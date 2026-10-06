@@ -282,12 +282,32 @@ function Rua:Tokenize(State)
     elseif StringHasLetter(BaseOperators, State.TokenCharacter) then
       local Operator = Tokenizer:Advance(State)
       local IsComment = false
+      local IsMultipleLineComment = false
 
       if Operator == "-" then
         if State.TokenCharacter == "-" then
           IsComment = true
-          while State.TokenCharacter ~= "\n" do
+          Tokenizer:Advance(State)
+          if State.TokenCharacter == "[" then
             Tokenizer:Advance(State)
+            if State.TokenCharacter == "[" then
+              IsMultipleLineComment = true
+            end
+          end
+
+          while true do
+            Tokenizer:Advance(State)
+            if IsMultipleLineComment then
+              if State.TokenCharacter == "]" then
+                Tokenizer:Advance(State)
+                if State.TokenCharacter == "]" then
+                  Tokenizer:Advance(State)
+                  break
+                end
+              end
+            elseif State.TokenCharacter == "\n" then
+              break
+            end
           end
         end
       elseif Operator == "=" or Operator == "~" or Operator == ">" or Operator == "<" or Operator == "|" then
@@ -329,7 +349,7 @@ function Rua:Tokenize(State)
       while State.TokenCharacter ~= '"' and State.TokenCharacter ~= "'" do
         local Character = Tokenizer:Advance(State)
         if Character == "\\" then
-          Tokenizer:Advance(State) -- TODO: Handle string properly
+          Tokenizer:Advance(State)
         end
       end
       Tokenizer:Advance(State)
