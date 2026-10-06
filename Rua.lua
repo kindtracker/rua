@@ -175,7 +175,7 @@ function Rua.new()
     Line = 1,
     Row = 1,
     Stop = false,
-    IrProgram = {},
+    Ir = { Program = {}, LabelCount = 0 },
   }
 end
 
@@ -192,7 +192,7 @@ function Rua:Run(State, FileName)
   io.write("\n")
 
   Rua:GenerateIr(State)
-  PrintTable(State.IrProgram)
+  PrintTable(State.Ir.Program)
   io.write("\n")
 end
 
@@ -725,7 +725,7 @@ end
 local IrGenerator = {}
 
 function IrGenerator:NewIr(State)
-  table.insert(State.IrProgram, State.CurrentIr)
+  table.insert(State.Ir.Program, State.CurrentIr)
   State.CurrentIr = {
     Arguments = {},
   }
@@ -737,6 +737,17 @@ function IrGenerator:NewBlankIr(State)
   }
 end
 
+function IrGenerator:NewLabel(State)
+  State.Ir.LabelCount = State.Ir.LabelCount + 1
+  return State.Ir.LabelCount
+end
+
+function IrGenerator:GenerateBlock(State, Body)
+  for _, Ast in ipairs(Body) do
+    IrGenerator:GenerateIr(State, Ast, 0)
+  end
+end
+
 function IrGenerator:GenerateIr(State, Ast, ResultRegister)
   State.CurrentIr = { Arguments = {} }
 
@@ -744,7 +755,6 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
     for _, Argument in pairs(Ast.Arguments) do
       IrGenerator:GenerateIr(State, Argument, 0)
     end
-    IrGenerator:NewBlankIr(State)
 
     State.CurrentIr.Type = "GetFunction"
     State.CurrentIr.Arguments = {
@@ -772,8 +782,45 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
       [2] = ResultRegister,
     }
     IrGenerator:NewIr(State)
+  elseif Ast.Type == "VariableAssign" then
+    IrGenerator:GenerateIr(State, Ast.Name, 1)
+    IrGenerator:GenerateIr(State, Ast.Value, 2)
+
+    State.CurrentIr.Type = (Ast.Local and "Local" or "Global") .. "VariableAssign"
+    State.CurrentIr.Arguments = {
+      [1] = 1,
+      [2] = 2,
+    }
+    IrGenerator:NewIr(State)
+  elseif Ast.Type == "Return" then
+    IrGenerator:GenerateIr(State, Ast.Value, 0)
+  elseif Ast.Type == "If" then
+    local EndLabel = IrGenerator:NewLabel(State)
+
+    IrGenerator:GenerateIr(State, Ast.Condition, 1)
+
+    State.CurrentIr.Type = "Test"
+    State.CurrentIr.Arguments = {
+      [1] = 1,
+    }
+    IrGenerator:NewIr(State)
+
+    State.CurrentIr.Type = "Jump"
+    State.CurrentIr.Arguments = {
+      [1] = EndLabel,
+    }
+    IrGenerator:NewIr(State)
+
+    IrGenerator:GenerateBlock(State, Ast.Body)
+
+    State.CurrentIr.Type = "Label"
+    State.CurrentIr.Arguments = {
+      [1] = EndLabel,
+    }
+    IrGenerator:NewIr(State)
   end
 
+  State.CurrentIr = { Arguments = {} }
   return IrProgram
 end
 
