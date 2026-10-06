@@ -175,7 +175,7 @@ function Rua.new()
     Line = 1,
     Row = 1,
     Stop = false,
-    Ir = { Program = {}, LabelCount = 0 },
+    Ir = { Program = {}, LabelCount = 0, Registers = {} },
   }
 end
 
@@ -748,16 +748,36 @@ function IrGenerator:GenerateBlock(State, Body)
   end
 end
 
-function IrGenerator:ConvertStringToIr(State, String, ResultRegister)
-  IrGenerator:GenerateIr(State, {
+function IrGenerator:ConvertStringToIr(State, String)
+  local ResultRegister = IrGenerator:GenerateIr(State, {
     Type = "String",
     Value = String,
-  }, ResultRegister)
+  })
+
+  return ResultRegister
 end
 
-function IrGenerator:AllocateRegister() end
+function IrGenerator:AllocateRegister(State)
+  for Register, Used in pairs(State.Ir.Registers) do
+    if not Used then
+      IrGenerator:MarkUsed(State, Register)
+      return Register
+    end
+  end
 
-function IrGenerator:GenerateIr(State, Ast, ResultRegister)
+  Logger:Error("Failed to allocate a register")
+  return nil
+end
+
+function IrGenerator:MarkUsed(State, Register)
+  State.Ir.Registers[Register] = true
+end
+
+function IrGenerator:MarkNotUsed(State, Register)
+  State.Ir.Registers[Register] = false
+end
+
+function IrGenerator:GenerateIr(State, Ast)
   State.CurrentIr = { Arguments = {} }
 
   if Ast.Type == "FunctionCall" then
@@ -765,19 +785,25 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
       IrGenerator:GenerateIr(State, Argument, 0)
     end
 
+    local FunctionNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
+    local FunctionRegister = IrGenerator:AllocateRegister(State)
+
     State.CurrentIr.Type = "GetFunction"
     State.CurrentIr.Arguments = {
-      [1] = Ast.Name,
-      [2] = 1,
+      [1] = FunctionNameRegister,
+      [2] = FunctionRegister,
     }
+    IrGenerator:MarkNotUsed(State, FunctionNameRegister)
     IrGenerator:NewIr(State)
 
     State.CurrentIr.Type = "CallFromRegister"
     State.CurrentIr.Arguments = {
-      [1] = 1,
+      [1] = FunctionRegister,
     }
+    IrGenerator:MarkNotUsed(State, FunctionRegister)
     IrGenerator:NewIr(State)
   elseif Ast.Type == "Number" then
+    local ResultRegister = IrGenerator:AllocateRegister(State)
     State.CurrentIr.Type = "LoadNumber"
     State.CurrentIr.Arguments = {
       [1] = Ast.Value,
@@ -785,6 +811,7 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
     }
     IrGenerator:NewIr(State)
   elseif Ast.Type == "String" then
+    local ResultRegister = IrGenerator:AllocateRegister(State)
     State.CurrentIr.Type = "LoadString"
     State.CurrentIr.Arguments = {
       [1] = Ast.Value,
@@ -792,34 +819,47 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
     }
     IrGenerator:NewIr(State)
   elseif Ast.Type == "Identifier" then
-    IrGenerator:ConvertStringToIr(State, Ast.Value, 1)
+    local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Value)
+    local VariableRegister = IrGenerator:AllocateRegister(State)
 
     State.CurrentIr.Type = "GetVariable"
     State.CurrentIr.Arguments = {
-      [1] = 1,
+      [1] = VariableNameRegister,
+      [2] = VariableRegister,
     }
+    IrGenerator:MarkNotUsed(State, VariableNameRegister)
     IrGenerator:NewIr(State)
   elseif Ast.Type == "VariableAssign" then
-    IrGenerator:ConvertStringToIr(State, Ast.Name, 1)
-    IrGenerator:GenerateIr(State, Ast.Value, 2)
+    local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
+    local ResultRegister = IrGenerator:GenerateIr(State, Ast.Value)
 
     State.CurrentIr.Type = (Ast.Local and "Local" or "Global") .. "VariableAssign"
     State.CurrentIr.Arguments = {
-      [1] = 1,
-      [2] = 2,
+      [1] = VariableNameRegister,
+      [2] = ResultRegister,
     }
+    IrGenerator:MarkNotUsed(State, VariableNameRegister)
+    IrGenerator:MarkNotUsed(State, ResultRegister)
     IrGenerator:NewIr(State)
   elseif Ast.Type == "Return" then
-    IrGenerator:GenerateIr(State, Ast.Value, 0)
+    local ReturnRegister = IrGenerator:GenerateIr(State, Ast.Value)
+
+    State.CurrentIr.Type = "Push"
+    State.CurrentIr.Arguments = {
+      [1] = ReturnRegister,
+    }
+    IrGenerator:MarkNotUsed(State, ReturnRegister)
+    IrGenerator:NewIr(State)
   elseif Ast.Type == "If" then
     local EndLabel = IrGenerator:NewLabel(State)
 
-    IrGenerator:GenerateIr(State, Ast.Condition, 1)
+    local ResultRegister = IrGenerator:GenerateIr(State, Ast.Condition)
 
     State.CurrentIr.Type = "Test"
     State.CurrentIr.Arguments = {
-      [1] = 1,
+      [1] = ResultRegister,
     }
+    IrGenerator:MarkNotUsed(State, ResultRegister)
     IrGenerator:NewIr(State)
 
     State.CurrentIr.Type = "Jump"
@@ -838,7 +878,6 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
   end
 
   State.CurrentIr = { Arguments = {} }
-  return IrProgram
 end
 
 function Rua:GenerateIr(State)
