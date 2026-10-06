@@ -345,7 +345,7 @@ function Rua:Tokenize(State)
         Tokenizer:Advance(State)
       end
 
-      local Number = State.FileContent:sub(StartIndex, State.FileIndex - 1)
+      local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex - 1))
       Tokenizer:AddToken(State, "Number", Number)
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
       Tokenizer:Advance(State)
@@ -731,11 +731,21 @@ function IrGenerator:NewIr(State)
   }
 end
 
-function IrGenerator:GenerateIr(State, Ast)
+function IrGenerator:NewBlankIr(State)
+  State.CurrentIr = {
+    Arguments = {},
+  }
+end
+
+function IrGenerator:GenerateIr(State, Ast, ResultRegister)
   State.CurrentIr = { Arguments = {} }
 
   if Ast.Type == "FunctionCall" then
-    print("Test")
+    for _, Argument in pairs(Ast.Arguments) do
+      IrGenerator:GenerateIr(State, Argument, 0)
+    end
+    IrGenerator:NewBlankIr(State)
+
     State.CurrentIr.Type = "GetFunction"
     State.CurrentIr.Arguments = {
       [1] = Ast.Name,
@@ -746,6 +756,13 @@ function IrGenerator:GenerateIr(State, Ast)
     State.CurrentIr.Type = "CallFromRegister"
     State.CurrentIr.Arguments = {
       [1] = 1,
+    }
+    IrGenerator:NewIr(State)
+  elseif Ast.Type == "Number" then
+    State.CurrentIr.Type = "LoadNumber"
+    State.CurrentIr.Arguments = {
+      [1] = Ast.Value,
+      [2] = ResultRegister,
     }
     IrGenerator:NewIr(State)
   end
