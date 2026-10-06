@@ -783,7 +783,7 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
     }
     IrGenerator:NewIr(State)
   elseif Ast.Type == "VariableAssign" then
-    IrGenerator:GenerateIr(State, Ast.Name, 1)
+    IrGenerator:GenerateIr(State, { Type = "String", Value = Ast.Name }, 1)
     IrGenerator:GenerateIr(State, Ast.Value, 2)
 
     State.CurrentIr.Type = (Ast.Local and "Local" or "Global") .. "VariableAssign"
