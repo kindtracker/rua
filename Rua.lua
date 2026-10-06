@@ -748,12 +748,14 @@ function IrGenerator:GenerateBlock(State, Body)
   end
 end
 
-function IrGenerator:ConvertStringToAst(String)
-  return {
+function IrGenerator:ConvertStringToIr(State, String, ResultRegister)
+  IrGenerator:GenerateIr(State, {
     Type = "String",
     Value = String,
-  }
+  }, ResultRegister)
 end
+
+function IrGenerator:AllocateRegister() end
 
 function IrGenerator:GenerateIr(State, Ast, ResultRegister)
   State.CurrentIr = { Arguments = {} }
@@ -790,13 +792,15 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
     }
     IrGenerator:NewIr(State)
   elseif Ast.Type == "Identifier" then
+    IrGenerator:ConvertStringToIr(State, Ast.Value, 1)
+
     State.CurrentIr.Type = "GetVariable"
     State.CurrentIr.Arguments = {
-      [1] = IrGenerator:ConvertStringToAst(String),
+      [1] = 1,
     }
     IrGenerator:NewIr(State)
   elseif Ast.Type == "VariableAssign" then
-    IrGenerator:GenerateIr(State, IrGenerator:ConvertStringToAst(Ast.Name), 1)
+    IrGenerator:ConvertStringToIr(State, Ast.Name, 1)
     IrGenerator:GenerateIr(State, Ast.Value, 2)
 
     State.CurrentIr.Type = (Ast.Local and "Local" or "Global") .. "VariableAssign"
