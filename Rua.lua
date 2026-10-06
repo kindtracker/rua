@@ -765,6 +765,13 @@ function IrGenerator:GenerateIr(State, Ast, ResultRegister)
       [2] = ResultRegister,
     }
     IrGenerator:NewIr(State)
+  elseif Ast.Type == "String" then
+    State.CurrentIr.Type = "LoadString"
+    State.CurrentIr.Arguments = {
+      [1] = Ast.Value,
+      [2] = ResultRegister,
+    }
+    IrGenerator:NewIr(State)
   end
 
   return IrProgram
