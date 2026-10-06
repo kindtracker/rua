@@ -175,6 +175,7 @@ function Rua.new()
     Line = 1,
     Row = 1,
     Stop = false,
+    IrProgram = {},
   }
 end
 
@@ -188,6 +189,10 @@ function Rua:Run(State, FileName)
 
   Rua:Parse(State)
   PrintTable(State.Ast)
+  io.write("\n")
+
+  Rua:GenerateIr(State)
+  PrintTable(State.IrProgram)
   io.write("\n")
 end
 
@@ -714,6 +719,43 @@ function Rua:Parse(State)
     if Statement ~= nil then
       table.insert(State.Ast, Statement)
     end
+  end
+end
+
+local IrGenerator = {}
+
+function IrGenerator:NewIr(State)
+  table.insert(State.IrProgram, State.CurrentIr)
+  State.CurrentIr = {
+    Arguments = {},
+  }
+end
+
+function IrGenerator:GenerateIr(State, Ast)
+  State.CurrentIr = { Arguments = {} }
+
+  if Ast.Type == "FunctionCall" then
+    print("Test")
+    State.CurrentIr.Type = "GetFunction"
+    State.CurrentIr.Arguments = {
+      [1] = Ast.Name,
+      [2] = 1,
+    }
+    IrGenerator:NewIr(State)
+
+    State.CurrentIr.Type = "CallFromRegister"
+    State.CurrentIr.Arguments = {
+      [1] = 1,
+    }
+    IrGenerator:NewIr(State)
+  end
+
+  return IrProgram
+end
+
+function Rua:GenerateIr(State)
+  for _, Ast in pairs(State.Ast) do
+    IrGenerator:GenerateIr(State, Ast)
   end
 end
 
