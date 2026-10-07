@@ -298,22 +298,31 @@ function Rua:Run(State, FileName)
   if State.Stop then
     return
   end
-  PrintTable(State.Tokens)
-  io.write("\n")
+
+  if Rua.DevMode then
+    PrintTable(State.Tokens)
+    io.write("\n")
+  end
 
   Rua:Parse(State)
   if State.Stop then
     return
   end
-  PrintTable(State.Ast)
-  io.write("\n")
+
+  if Rua.DevMode then
+    PrintTable(State.Ast)
+    io.write("\n")
+  end
 
   Rua:GenerateIr(State)
   if State.Stop then
     return
   end
-  PrintTable(State.Ir.Program)
-  io.write("\n")
+
+  if Rua.DevMode then
+    PrintTable(State.Ir.Program)
+    io.write("\n")
+  end
 
   Rua:GenerateBytecode(State)
   if State.Stop then
@@ -321,7 +330,7 @@ function Rua:Run(State, FileName)
   end
 
   if Rua.DevMode then
-    io.open("Test.rua", "wb"):write(State.Bytecode.Program)
+    io.open("Dev.rua", "wb"):write(State.Bytecode.Program)
   end
 
   Rua:Execute(State)
@@ -360,7 +369,7 @@ function Logger:Error(State, ...)
   State.Stop = true
 
   if Rua.DevMode then
-    print(debug.traceback():gsub("stack traceback:\n", ""))
+    io.write(debug.traceback():gsub("stack traceback:\n", "") .. "\n")
   end
 end
 
@@ -1377,16 +1386,27 @@ function Vm:Execute(State)
     local FunctionRegister, FunctionRegisterIndex = Vm:ReadAndGetRegister(State)
 
     if not State.Vm.SkipInstruction then
-      -- print("GetFunction", FunctionName, State.Vm.Functions[FunctionName], FunctionRegisterIndex)
       FunctionRegister.Type = "Function"
-      FunctionRegister.Value = State.Vm.Functions[FunctionName]
+      FunctionRegister.Value = { Name = FunctionName, Function = table.unpack(State.Vm.Functions[FunctionName] or {}) }
     end
   elseif Opcode == "CallFromRegister" then
     local FunctionRegister, Index = Vm:ReadAndGetRegister(State)
 
     if not State.Vm.SkipInstruction then
-      -- print("CallFromRegister", Index)
-      State.Vm.Pc = FunctionRegister.Value.Address
+      if FunctionRegister.Value.Function == nil then
+        local Function = _G[FunctionRegister.Value.Name]
+        if Function then
+          local Arguments = {}
+
+          while #State.Vm.Stack > 0 do
+            table.insert(Arguments, 1, table.remove(State.Vm.Stack))
+          end
+
+          Function(table.unpack(Arguments))
+        end
+      else
+        State.Vm.Pc = FunctionRegister.Value.Address
+      end
     end
   elseif Opcode == "LoadFunction" then
     local FunctionAddress = Vm:Read32(State)
@@ -1398,7 +1418,6 @@ function Vm:Execute(State)
         Address = FunctionAddress,
         ArgumentCount = FunctionArgumentCount,
       }
-      -- print("LoadFunction", FunctionName, FunctionAddress)
     end
   elseif Opcode == "LoadNumber" then
     local Number = Vm:ReadDouble(State)
@@ -1447,7 +1466,7 @@ function Vm:Execute(State)
     local Register = Vm:ReadAndGetRegister(State)
     local Top = table.remove(State.Vm.Stack)
 
-    if not State.Vm.SkipInstruction then
+    if not State.Vm.SkipInstruction and Top then
       Register.Type = Top.Type
       Register.Value = Top.Value
     end
