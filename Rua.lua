@@ -177,7 +177,93 @@ function Rua.new()
     Stop = false,
     Ir = { Program = {}, LabelCount = 0, Registers = {} },
     ShowFaultLine = true,
-    Bytecode = { Program = "", ProgramTable = {}, Current = "", Isa = {} },
+    Bytecode = {
+      Program = "",
+      ProgramTable = {},
+      Current = "",
+      Isa = {
+        Opcodes = {
+          GetFunction = 1,
+          CallFromRegister = 2,
+          LoadNumber = 3,
+          LoadString = 4,
+          LoadBoolean = 5,
+          GetVariable = 6,
+          LocalVariableAssign = 7,
+          GlobalVariableAssign = 8,
+          Push = 9,
+          Test = 10,
+          Jump = 11,
+          Label = 12,
+          Add = 13,
+          Sub = 14,
+          Mul = 15,
+          Div = 16,
+        },
+
+        InstructionArguments = {
+          GetFunction = {
+            [1] = "Register",
+            [2] = "Register",
+          },
+          CallFromRegister = {
+            [1] = "Register",
+          },
+          LoadNumber = {
+            [1] = "Number",
+            [2] = "Register",
+          },
+          LoadString = {
+            [1] = "String",
+            [2] = "Register",
+          },
+          LoadBoolean = {
+            [1] = "Boolean",
+            [2] = "Register",
+          },
+          GetVariable = {
+            [1] = "Register",
+            [2] = "Register",
+          },
+          VariableAssign = {
+            [1] = "Register",
+            [2] = "Register",
+          },
+          Push = {
+            [1] = "Register",
+          },
+          Test = {
+            [1] = "Register",
+          },
+          Jump = {
+            [1] = "Label",
+          },
+          Label = {
+            [1] = "Label",
+          },
+          Add = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+          Sub = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+          Mul = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+          Div = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+        },
+      },
+    },
   }
 end
 
@@ -949,20 +1035,24 @@ end
 
 local BytecodeGenerator = {}
 
-function BytecodeGenerator:Write8(State, Value)
+function BytecodeGenerator:Write(State, Value)
   table.insert(State.Bytecode.ProgramTable, string.char(Value))
 end
 
 function BytecodeGenerator:Write16(State, Value)
-  BytecodeGenerator:Write8(Value % 256)
-  BytecodeGenerator:Write8(math.floor(Value / 256) % 256)
+  BytecodeGenerator:Write(State, Value % 256)
+  BytecodeGenerator:Write(State, math.floor(Value / 256) % 256)
 end
 
 function BytecodeGenerator:Write32(State, Value)
-  BytecodeGenerator:Write8(Value % 256)
-  BytecodeGenerator:Write8(math.floor(Value / 256) % 256)
-  BytecodeGenerator:Write8(math.floor(Value / 65536) % 256)
-  BytecodeGenerator:Write8(math.floor(Value / 16777216) % 256)
+  BytecodeGenerator:Write(State, Value % 256)
+  BytecodeGenerator:Write(State, math.floor(Value / 256) % 256)
+  BytecodeGenerator:Write(State, math.floor(Value / 65536) % 256)
+  BytecodeGenerator:Write(State, math.floor(Value / 16777216) % 256)
+end
+
+function BytecodeGenerator:WriteDouble(State, Value)
+  table.insert(State.Bytecode.ProgramTable, string.pack("<d", Value))
 end
 
 function BytecodeGenerator:Initalize(State)
@@ -971,8 +1061,26 @@ function BytecodeGenerator:Initalize(State)
 end
 
 function BytecodeGenerator:Generate(State, Ir)
-  local Instruction = State.Bytecode.Isa[Ir.Type]
-  BytecodeGenerator:Write8(State, Instruction)
+  local Instruction = State.Bytecode.Isa.Opcodes[Ir.Type]
+  BytecodeGenerator:Write(State, Instruction)
+
+  for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
+    local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
+
+    if ArgumentType == "Register" then
+      BytecodeGenerator:Write(State, ArgumentValue)
+    elseif ArgumentType == "Number" then
+      BytecodeGenerator:WriteDouble(State, ArgumentValue)
+    elseif ArgumentType == "String" then
+      for Index = 1, #ArgumentValue do
+        BytecodeGenerator:Write(State, string.byte(ArgumentValue, Index))
+      end
+    elseif ArgumentType == "Boolean" then
+      BytecodeGenerator:Write8(State, ArgumentValue)
+    elseif ArgumentType == "Label" then
+      BytecodeGenerator:Write32(State, ArgumentValue)
+    end
+  end
 end
 
 function Rua:GenerateBytecode(State)
