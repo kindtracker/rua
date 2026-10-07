@@ -278,6 +278,15 @@ function Rua.new()
         },
       },
     },
+    Vm = {
+      Pc = 1,
+      Registers = {},
+      Stack = {},
+      LocalVariables = {},
+      GlobalVariables = {},
+      Functions = {},
+      SkipInstruction = false,
+    },
   }
 end
 
@@ -314,6 +323,8 @@ function Rua:Run(State, FileName)
   if Rua.DevMode then
     io.open("Test.rua", "wb"):write(State.Bytecode.Program)
   end
+
+  Rua:Execute(State)
 end
 
 local Logger = {}
@@ -1214,7 +1225,7 @@ function BytecodeGenerator:WriteDouble(State, Value)
 end
 
 function BytecodeGenerator:FindLabels(State)
-  local Offset = 0
+  local Offset = 1
 
   for _, Ir in ipairs(State.Ir.Program) do
     if Ir.Type == "Label" then
@@ -1295,16 +1306,210 @@ function Rua:GenerateBytecode(State)
   State.Bytecode.Program = table.concat(State.Bytecode.ProgramTable)
 end
 
+local Vm = {}
+
+function Vm:Read8(State)
+  local Value = string.byte(State.Bytecode.Program, State.Vm.Pc)
+  State.Vm.Pc = State.Vm.Pc + 1
+
+  return Value
+end
+
+function Vm:Read16(State)
+  local Value = Vm:Read8(State)
+  Value = Value + Vm:Read8(State) * 256
+
+  return Value
+end
+
+function Vm:Read32(State)
+  local Value = Vm:Read8(State)
+  Value = Value + Vm:Read8(State) * 256
+  Value = Value + Vm:Read8(State) * 65536
+  Value = Value + Vm:Read8(State) * 16777216
+
+  return Value
+end
+
+function Vm:ReadDouble(State)
+  local Value
+  Value, State.Vm.Pc = string.unpack("<d", State.Bytecode.Program, State.Vm.Pc)
+
+  return Value
+end
+
+function Vm:ReadString(State)
+  local Length = Vm:Read32(State)
+  local Value = State.Bytecode.Program:sub(State.Vm.Pc, State.Vm.Pc + Length - 1)
+
+  State.Vm.Pc = State.Vm.Pc + Length
+
+  return Value
+end
+
+function Vm:GetRegister(State, Register)
+  return State.Vm.Registers[Register]
+end
+
+function Vm:ReadAndGetRegister(State)
+  local RegisterIndex = Vm:Read8(State)
+  return State.Vm.Registers[RegisterIndex], RegisterIndex
+end
+
+function Vm:GetStringFromRegister(State)
+  local Register, RegisterIndex
+  Register, RegisterIndex = Vm:ReadAndGetRegister(State)
+  return Register.Value, RegisterIndex
+end
+
+function Vm:Execute(State)
+  local Instruction = Vm:Read8(State)
+  local Opcode
+
+  for Key, Value in pairs(State.Bytecode.Isa.Opcodes) do
+    if Value == Instruction then
+      Opcode = Key
+    end
+  end
+
+  if Opcode == "GetFunction" then
+    local FunctionName = Vm:GetStringFromRegister(State)
+    local FunctionRegister, FunctionRegisterIndex = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      -- print("GetFunction", FunctionName, State.Vm.Functions[FunctionName], FunctionRegisterIndex)
+      FunctionRegister.Type = "Function"
+      FunctionRegister.Value = State.Vm.Functions[FunctionName]
+    end
+  elseif Opcode == "CallFromRegister" then
+    local FunctionRegister, Index = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      -- print("CallFromRegister", Index)
+      State.Vm.Pc = FunctionRegister.Value.Address
+    end
+  elseif Opcode == "LoadFunction" then
+    local FunctionAddress = Vm:Read32(State)
+    local FunctionName = Vm:GetStringFromRegister(State)
+    local FunctionArgumentCount = Vm:ReadDouble(State)
+
+    if not State.Vm.SkipInstruction then
+      State.Vm.Functions[FunctionName] = {
+        Address = FunctionAddress,
+        ArgumentCount = FunctionArgumentCount,
+      }
+      -- print("LoadFunction", FunctionName, FunctionAddress)
+    end
+  elseif Opcode == "LoadNumber" then
+    local Number = Vm:ReadDouble(State)
+    local ResultRegister = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      ResultRegister.Value = Number
+    end
+  elseif Opcode == "LoadString" then
+    local String = Vm:ReadString(State)
+    local ResultRegister = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      ResultRegister.Value = String
+    end
+  elseif TableHasString({ "Add", "Sub", "Div", "Mul" }, Opcode) then
+    local LeftRegister = Vm:ReadAndGetRegister(State)
+    local RightRegister = Vm:ReadAndGetRegister(State)
+    local ResultRegister = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      if Opcode == "Add" then
+        ResultRegister.Value = LeftRegister.Value + RightRegister.Value
+      elseif Opcode == "Sub" then
+        ResultRegister.Value = LeftRegister.Value - RightRegister.Value
+      elseif Opcode == "Div" then
+        ResultRegister.Value = LeftRegister.Value / RightRegister.Value
+      elseif Opcode == "Mul" then
+        ResultRegister.Value = LeftRegister.Value * RightRegister.Value
+      end
+    end
+  elseif Opcode == "Jump" then
+    local Address = Vm:Read32(State)
+
+    if not State.Vm.SkipInstruction then
+      State.Vm.Pc = Address
+    end
+    -- uhhh
+  elseif Opcode == "Push" then
+    local Register = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      table.insert(State.Vm.Stack, Register.Value)
+    end
+  elseif Opcode == "Pop" then
+    local Register = Vm:ReadAndGetRegister(State)
+    local Top = table.remove(State.Vm.Stack)
+
+    if not State.Vm.SkipInstruction then
+      Register.Type = Top.Type
+      Register.Value = Top.Value
+    end
+  elseif Opcode == "Test" then
+    local Register = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      if Register.Value ~= 0 then
+        State.Vm.SkipInstruction = true
+      end
+    end
+  elseif TableHasString({ "LocalVariableAssign", "GlobalVariableAssign" }, Opcode) then
+    local VariableName = Vm:GetStringFromRegister(State)
+    local VariableRegister = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      if Opcode == "LocalVariableAssign" then
+        State.Vm.LocalVariables[VariableName] = VariableRegister.Value
+      else
+        State.Vm.GlobalVariables[VariableName] = VariableRegister.Value
+      end
+    end
+  end
+end
+
+function Vm:Initalize(State)
+  State.Vm.Pc = 1
+  for Index = 1, 256 do
+    State.Vm.Registers[Index] = {
+      Type = "Nil",
+      Value = nil,
+    }
+  end
+end
+
+function Vm:Run(State)
+  local Result
+
+  while State.Vm.Pc <= #State.Bytecode.Program do
+    Result = Vm:Execute(State)
+    State.Vm.SkipInstruction = false
+  end
+
+  return Result
+end
+
+function Rua:Execute(State)
+  Vm:Initalize(State)
+  return Vm:Run(State)
+end
+
 Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
 Rua.IrGenerator = IrGenerator
 Rua.BytecodeGenerator = BytecodeGenerator
+Rua.Vm = Vm
 
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Register-based VM
 
--- TODO: Register-based VM
+-- TODO: A working register-based VM
 
 return Rua
