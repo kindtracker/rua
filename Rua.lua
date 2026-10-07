@@ -488,7 +488,7 @@ function Parser:ParsePrimaryExpression(State)
     Parser:Advance(State)
 
     return {
-      Type = "Identifier",
+      Type = "Ident",
       Value = Token.Value,
     }
   end
@@ -827,7 +827,7 @@ function IrGenerator:GenerateIr(State, Ast)
     IrGenerator:NewIr(State)
 
     return ResultRegister
-  elseif Ast.Type == "Identifier" then
+  elseif Ast.Type == "Ident" then
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Value)
     local VariableRegister = IrGenerator:AllocateRegister(State)
 
@@ -837,6 +837,16 @@ function IrGenerator:GenerateIr(State, Ast)
       [2] = VariableRegister,
     }
     IrGenerator:MarkNotUsed(State, VariableNameRegister)
+    IrGenerator:NewIr(State)
+
+    return ResultRegister
+  elseif Ast.Type == "Boolean" then
+    local ResultRegister = IrGenerator:AllocateRegister(State)
+    State.CurrentIr.Type = "LoadBoolean"
+    State.CurrentIr.Arguments = {
+      [1] = Ast.Value,
+      [2] = ResultRegister,
+    }
     IrGenerator:NewIr(State)
 
     return ResultRegister
@@ -940,7 +950,7 @@ Rua.Parser = Parser
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Stack VM
 
--- TODO: Make Ir generator, code generator, and VM (stack-based)
+-- TODO: code generator, and VM (stack-based)
 -- TODO: Handle strings properly (handle escape)
 -- TODO: Handle hex and binary numbers
 
