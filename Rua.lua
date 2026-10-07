@@ -886,6 +886,31 @@ function IrGenerator:GenerateIr(State, Ast)
       [1] = EndLabel,
     }
     IrGenerator:NewIr(State)
+  elseif Ast.Type == "BinaryExpression" then
+    local LeftRegister = IrGenerator:GenerateIr(State, Ast.Left)
+    local RightRegister = IrGenerator:GenerateIr(State, Ast.Right)
+    local ResultRegister = IrGenerator:AllocateRegister(State)
+
+    State.CurrentIr.Arguments = {
+      [1] = LeftRegister,
+      [2] = RightRegister,
+      [3] = ResultRegister,
+    }
+
+    if Ast.Operator == "+" then
+      State.CurrentIr.Type = "Add"
+    elseif Ast.Operator == "-" then
+      State.CurrentIr.Type = "Sub"
+    elseif Ast.Operator == "/" then
+      State.CurrentIr.Type = "Mul"
+    elseif Ast.Operator == "*" then
+      State.CurrentIr.Type = "Div"
+    end
+    IrGenerator:NewIr(State)
+
+    IrGenerator:MarkNotUsed(State, LeftRegister)
+    IrGenerator:MarkNotUsed(State, RightRegister)
+    return ResultRegister
   end
 
   State.CurrentIr = { Arguments = {} }
