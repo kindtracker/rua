@@ -481,15 +481,19 @@ function Rua:Tokenize(State)
       local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex))
       Tokenizer:AddToken(State, "Number", Number)
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
+      local Quote = State.TokenCharacter
       Tokenizer:Advance(State)
+
       local StartIndex = State.FileIndex
 
-      while State.TokenCharacter ~= '"' and State.TokenCharacter ~= "'" do
+      while State.TokenCharacter ~= Quote do
         local Character = Tokenizer:Advance(State)
+
         if Character == "\\" then
           Tokenizer:Advance(State)
         end
       end
+
       Tokenizer:Advance(State)
 
       Tokenizer:AddToken(State, "String", State.FileContent:sub(StartIndex, State.FileIndex - 2))
@@ -1299,9 +1303,8 @@ Rua.BytecodeGenerator = BytecodeGenerator
 
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
--- Stack VM
+-- Register-based VM
 
 -- TODO: Register-based VM
--- TODO: Handle strings properly (handle escape)
 
 return Rua
