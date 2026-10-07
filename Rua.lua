@@ -17,6 +17,7 @@
 ]]
 
 local Rua = {}
+-- Rua.DevMode = true
 
 local _
 
@@ -300,7 +301,10 @@ function Rua:Run(State, FileName)
   if State.Stop then
     return
   end
-  io.open("Test.rua", "wb"):write(State.Bytecode.Program)
+
+  if Rua.DevMode then
+    io.open("Test.rua", "wb"):write(State.Bytecode.Program)
+  end
 end
 
 local Logger = {}
@@ -334,6 +338,10 @@ function Logger:Error(State, ...)
   )
 
   State.Stop = true
+
+  if Rua.DevMode then
+    print(debug.traceback():gsub("stack traceback:\n", ""))
+  end
 end
 
 local Tokenizer = {}
@@ -607,10 +615,27 @@ function Parser:ParsePrimaryExpression(State)
 
     Parser:Advance(State)
 
-    return {
+    local Expression = {
       Type = "Ident",
       Value = Token.Value,
     }
+
+    if State.CurrentToken and State.CurrentToken.Value == "(" then
+      Parser:Advance(State)
+
+      Expression = {
+        Type = "FunctionCall",
+        Name = Token.Value,
+        Arguments = Parser:ParseArgumentList(State),
+      }
+
+      local Kind = Parser:Expect(State, ")")
+      if Kind == nil then
+        return nil
+      end
+    end
+
+    return Expression
   end
 
   if Token.Kind == "Number" then
@@ -756,7 +781,7 @@ function Parser:ParseFunction(State, Statement)
   Statement.Name = State.CurrentToken.Value
   Parser:Advance(State)
   Statement.Arguments = Parser:ParseArgumentList(State)
-  Statement.Body = Parser:ParseBlock(State)
+  Statement.Body = Parser:ParseBlock(State, "end")
 end
 
 function Parser:ParseReturn(State, Statement)
@@ -807,7 +832,8 @@ function Parser:ParseStatement(State, IsLocal)
     end
   elseif Kind == "Keyword" then
     if Value == "local" then
-      return Parser:ParseStatement(State, true)
+      local Result = Parser:ParseStatement(State, true)
+      return Result
     elseif Value == "function" then
       Parser:ParseFunction(State, Statement)
     elseif Value == "return" then

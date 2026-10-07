@@ -1,4 +1,4 @@
-local function Fib(Number)
+function Fib(Number)
   if Number == 1 then
     return 1
   elseif Number == 0 then
