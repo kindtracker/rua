@@ -777,6 +777,8 @@ function Parser:ParseIf(State, Statement)
     Parser:Advance(State)
     Statement.ElseIf = {}
     Statement.Elseif = Parser:ParseIf(State, Statement.ElseIf, "end", "elseif", "else")
+  elseif State.CurrentToken.Value == "end" then
+    Parser:Advance(State)
   end
 end
 
@@ -985,6 +987,7 @@ function IrGenerator:GenerateIr(State, Ast)
     IrGenerator:MarkNotUsed(State, ReturnRegister)
     IrGenerator:NewIr(State)
   elseif Ast.Type == "If" then
+    local ElseLabel = IrGenerator:NewLabel(State)
     local EndLabel = IrGenerator:NewLabel(State)
 
     local ResultRegister = IrGenerator:GenerateIr(State, Ast.Condition)
@@ -998,11 +1001,29 @@ function IrGenerator:GenerateIr(State, Ast)
 
     State.CurrentIr.Type = "Jump"
     State.CurrentIr.Arguments = {
-      [1] = EndLabel,
+      [1] = ElseLabel,
     }
     IrGenerator:NewIr(State)
 
     IrGenerator:GenerateBlock(State, Ast.Body)
+
+    State.CurrentIr.Type = "Jump"
+    State.CurrentIr.Arguments = {
+      [1] = EndLabel,
+    }
+    IrGenerator:NewIr(State)
+
+    State.CurrentIr.Type = "Label"
+    State.CurrentIr.Arguments = {
+      [1] = ElseLabel,
+    }
+    IrGenerator:NewIr(State)
+
+    if Ast.ElseIf then
+      IrGenerator:GenerateIr(State, Ast.ElseIf)
+    elseif Ast.Else then
+      IrGenerator:GenerateBlock(State, Ast.Else)
+    end
 
     State.CurrentIr.Type = "Label"
     State.CurrentIr.Arguments = {
@@ -1073,6 +1094,10 @@ function BytecodeGenerator:Write32(State, Value)
   BytecodeGenerator:Write8(State, math.floor(Value / 16777216) % 256)
 end
 
+function BytecodeGenerator:WriteBoolean(State, Value)
+  BytecodeGenerator:Write8(State, Value and 1 or 0)
+end
+
 function BytecodeGenerator:WriteDouble(State, Value)
   table.insert(State.Bytecode.ProgramTable, string.pack("<d", Value))
 end
@@ -1141,7 +1166,7 @@ function BytecodeGenerator:Generate(State, Ir)
         BytecodeGenerator:Write8(State, string.byte(ArgumentValue, Index))
       end
     elseif ArgumentType == "Boolean" then
-      BytecodeGenerator:Write8(State, ArgumentValue)
+      BytecodeGenerator:WriteBoolean(State, ArgumentValue)
     elseif ArgumentType == "Label" then
       local LabelAddress = State.Bytecode.Labels[ArgumentValue]
       BytecodeGenerator:Write32(State, LabelAddress)
