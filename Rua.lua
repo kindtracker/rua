@@ -177,6 +177,7 @@ function Rua.new()
     Stop = false,
     Ir = { Program = {}, LabelCount = 0, Registers = {} },
     ShowFaultLine = true,
+    Bytecode = { Program = "", ProgramTable = {}, Current = "", Isa = {} },
   }
 end
 
@@ -195,6 +196,8 @@ function Rua:Run(State, FileName)
   Rua:GenerateIr(State)
   PrintTable(State.Ir.Program)
   io.write("\n")
+
+  Rua:GenerateBytecode(State)
 end
 
 local Logger = {}
@@ -944,9 +947,47 @@ function Rua:GenerateIr(State)
   end
 end
 
+local BytecodeGenerator = {}
+
+function BytecodeGenerator:Write8(State, Value)
+  table.insert(State.Bytecode.ProgramTable, string.char(Value))
+end
+
+function BytecodeGenerator:Write16(State, Value)
+  BytecodeGenerator:Write8(Value % 256)
+  BytecodeGenerator:Write8(math.floor(Value / 256) % 256)
+end
+
+function BytecodeGenerator:Write32(State, Value)
+  BytecodeGenerator:Write8(Value % 256)
+  BytecodeGenerator:Write8(math.floor(Value / 256) % 256)
+  BytecodeGenerator:Write8(math.floor(Value / 65536) % 256)
+  BytecodeGenerator:Write8(math.floor(Value / 16777216) % 256)
+end
+
+function BytecodeGenerator:Initalize(State)
+  State.Bytecode.Program = ""
+  State.Bytecode.ProgramTable = {}
+end
+
+function BytecodeGenerator:Generate(State, Ir)
+  local Instruction = State.Bytecode.Isa[Ir.Type]
+  BytecodeGenerator:Write8(State, Instruction)
+end
+
+function Rua:GenerateBytecode(State)
+  BytecodeGenerator:Initalize(State)
+
+  for _, Ir in pairs(State.Ir.Program) do
+    BytecodeGenerator:Generate(State, Ir)
+  end
+end
+
 Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
+Rua.IrGenerator = IrGenerator
+Rua.BytecodeGenerator = BytecodeGenerator
 
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
