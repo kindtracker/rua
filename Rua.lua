@@ -829,13 +829,14 @@ function IrGenerator:GenerateIr(State, Ast)
     return ResultRegister
   elseif Ast.Type == "Ident" then
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Value)
-    local VariableRegister = IrGenerator:AllocateRegister(State)
+    local ResultRegister = IrGenerator:AllocateRegister(State)
 
     State.CurrentIr.Type = "GetVariable"
     State.CurrentIr.Arguments = {
       [1] = VariableNameRegister,
-      [2] = VariableRegister,
+      [2] = ResultRegister,
     }
+
     IrGenerator:MarkNotUsed(State, VariableNameRegister)
     IrGenerator:NewIr(State)
 
@@ -859,6 +860,7 @@ function IrGenerator:GenerateIr(State, Ast)
       [1] = VariableNameRegister,
       [2] = ResultRegister,
     }
+
     IrGenerator:MarkNotUsed(State, VariableNameRegister)
     IrGenerator:MarkNotUsed(State, ResultRegister)
     IrGenerator:NewIr(State)
