@@ -225,7 +225,11 @@ function Rua.new()
             [1] = "Register",
             [2] = "Register",
           },
-          VariableAssign = {
+          LocalVariableAssign = {
+            [1] = "Register",
+            [2] = "Register",
+          },
+          GlobalVariableAssign = {
             [1] = "Register",
             [2] = "Register",
           },
@@ -272,18 +276,31 @@ function Rua:Run(State, FileName)
   State.FileContent = io.open(FileName, "r"):read("*a")
 
   Rua:Tokenize(State)
+  if State.Stop then
+    return
+  end
   PrintTable(State.Tokens)
   io.write("\n")
 
   Rua:Parse(State)
+  if State.Stop then
+    return
+  end
   PrintTable(State.Ast)
   io.write("\n")
 
   Rua:GenerateIr(State)
+  if State.Stop then
+    return
+  end
   PrintTable(State.Ir.Program)
   io.write("\n")
 
   Rua:GenerateBytecode(State)
+  if State.Stop then
+    return
+  end
+  io.open("Test.rua", "wb"):write(State.Bytecode.Program)
 end
 
 local Logger = {}
@@ -297,7 +314,7 @@ function Logger:Error(State, ...)
 
   local Format = "%s:%d:%d: %sError:%s %s\n"
   if State.ShowFaultLine then
-    Format = Format .. "%s%s^%s%s\n"
+    Format = Format .. " %s\n%s%s^%s%s\n"
   end
   io.write(
     string.format(
@@ -433,13 +450,18 @@ function Rua:Tokenize(State)
         Tokenizer:AddToken(State, "Operator", Operator)
       end
     elseif StringHasLetter(BaseDigits, State.TokenCharacter) then
-      local StartIndex = State.FileIndex
+      local StartIndex = State.FileIndex - 1
+      local FirstDigit = true
 
       while StringHasLetter(BaseDigits, State.TokenCharacter) do
         Tokenizer:Advance(State)
+        if TableHasString({ "x", "b" }, State.TokenCharacter) and FirstDigit then
+          Tokenizer:Advance(State)
+        end
+        FirstDigit = false
       end
 
-      local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex - 1))
+      local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex))
       Tokenizer:AddToken(State, "Number", Number)
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
       Tokenizer:Advance(State)
@@ -1035,20 +1057,20 @@ end
 
 local BytecodeGenerator = {}
 
-function BytecodeGenerator:Write(State, Value)
+function BytecodeGenerator:Write8(State, Value)
   table.insert(State.Bytecode.ProgramTable, string.char(Value))
 end
 
 function BytecodeGenerator:Write16(State, Value)
-  BytecodeGenerator:Write(State, Value % 256)
-  BytecodeGenerator:Write(State, math.floor(Value / 256) % 256)
+  BytecodeGenerator:Write8(State, Value % 256)
+  BytecodeGenerator:Write8(State, math.floor(Value / 256) % 256)
 end
 
 function BytecodeGenerator:Write32(State, Value)
-  BytecodeGenerator:Write(State, Value % 256)
-  BytecodeGenerator:Write(State, math.floor(Value / 256) % 256)
-  BytecodeGenerator:Write(State, math.floor(Value / 65536) % 256)
-  BytecodeGenerator:Write(State, math.floor(Value / 16777216) % 256)
+  BytecodeGenerator:Write8(State, Value % 256)
+  BytecodeGenerator:Write8(State, math.floor(Value / 256) % 256)
+  BytecodeGenerator:Write8(State, math.floor(Value / 65536) % 256)
+  BytecodeGenerator:Write8(State, math.floor(Value / 16777216) % 256)
 end
 
 function BytecodeGenerator:WriteDouble(State, Value)
@@ -1062,13 +1084,13 @@ end
 
 function BytecodeGenerator:Generate(State, Ir)
   local Instruction = State.Bytecode.Isa.Opcodes[Ir.Type]
-  BytecodeGenerator:Write(State, Instruction)
+  BytecodeGenerator:Write8(State, Instruction)
 
   for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
     local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
 
     if ArgumentType == "Register" then
-      BytecodeGenerator:Write(State, ArgumentValue)
+      BytecodeGenerator:Write8(State, ArgumentValue)
     elseif ArgumentType == "Number" then
       BytecodeGenerator:WriteDouble(State, ArgumentValue)
     elseif ArgumentType == "String" then
@@ -1104,8 +1126,7 @@ Rua.BytecodeGenerator = BytecodeGenerator
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Stack VM
 
--- TODO: code generator, and VM (stack-based)
+-- TODO: Register-based VM
 -- TODO: Handle strings properly (handle escape)
--- TODO: Handle hex and binary numbers
 
 return Rua
