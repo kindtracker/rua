@@ -176,6 +176,7 @@ function Rua.new()
     Row = 1,
     Stop = false,
     Ir = { Program = {}, LabelCount = 0, Registers = {} },
+    ShowFaultLine = true,
   }
 end
 
@@ -205,9 +206,13 @@ function Logger:Error(State, ...)
   local WordStart, WordFinish = GetWordStartAndFinish(SourceLine, State.Row)
   local WordLength = WordFinish - WordStart
 
+  local Format = "%s:%d:%d: %sError:%s %s\n"
+  if State.ShowFaultLine then
+    Format = Format .. "%s%s^%s%s\n"
+  end
   io.write(
     string.format(
-      "%s:%d:%d: %sError:%s %s\n %s\n%s%s^%s%s\n",
+      Format,
       State.FileName,
       State.Line,
       State.Row,
@@ -765,7 +770,7 @@ function IrGenerator:AllocateRegister(State)
     end
   end
 
-  Logger:Error("Failed to allocate a register")
+  Logger:Error(State, "Failed to allocate a register")
   return nil
 end
 
@@ -810,6 +815,8 @@ function IrGenerator:GenerateIr(State, Ast)
       [2] = ResultRegister,
     }
     IrGenerator:NewIr(State)
+
+    return ResultRegister
   elseif Ast.Type == "String" then
     local ResultRegister = IrGenerator:AllocateRegister(State)
     State.CurrentIr.Type = "LoadString"
@@ -818,6 +825,8 @@ function IrGenerator:GenerateIr(State, Ast)
       [2] = ResultRegister,
     }
     IrGenerator:NewIr(State)
+
+    return ResultRegister
   elseif Ast.Type == "Identifier" then
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Value)
     local VariableRegister = IrGenerator:AllocateRegister(State)
@@ -829,6 +838,8 @@ function IrGenerator:GenerateIr(State, Ast)
     }
     IrGenerator:MarkNotUsed(State, VariableNameRegister)
     IrGenerator:NewIr(State)
+
+    return ResultRegister
   elseif Ast.Type == "VariableAssign" then
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
     local ResultRegister = IrGenerator:GenerateIr(State, Ast.Value)
@@ -880,7 +891,17 @@ function IrGenerator:GenerateIr(State, Ast)
   State.CurrentIr = { Arguments = {} }
 end
 
+function IrGenerator:Initalize(State)
+  State.ShowFaultLine = false
+  State.Ir.Registers = {}
+  for _ = 1, 256 do
+    table.insert(State.Ir.Registers, false)
+  end
+end
+
 function Rua:GenerateIr(State)
+  IrGenerator:Initalize(State)
+
   for _, Ast in pairs(State.Ast) do
     IrGenerator:GenerateIr(State, Ast)
   end
