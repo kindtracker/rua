@@ -485,6 +485,15 @@ function Parser:ParsePrimaryExpression(State)
   local Token = State.CurrentToken
 
   if Token.Kind == "Ident" then
+    if Token.Value == "true" or Token.Value == "false" then
+      Parser:Advance(State)
+
+      return {
+        Type = "Boolean",
+        Value = Token.Value == "true",
+      }
+    end
+
     Parser:Advance(State)
 
     return {
@@ -508,15 +517,6 @@ function Parser:ParsePrimaryExpression(State)
     return {
       Type = "String",
       Value = Token.Value,
-    }
-  end
-
-  if Token.Value == "true" or Token.Value == "false" then
-    Parser:Advance(State)
-
-    return {
-      Type = "Boolean",
-      Value = Token.Value == "true",
     }
   end
 
