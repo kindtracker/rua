@@ -17,7 +17,7 @@
 ]]
 
 local Rua = {}
--- Rua.DevMode = true
+Rua.DevMode = true
 
 local _
 
@@ -193,13 +193,15 @@ function Rua.new()
           LocalVariableAssign = 7,
           GlobalVariableAssign = 8,
           Push = 9,
-          Test = 10,
-          Jump = 11,
-          Label = 12,
-          Add = 13,
-          Sub = 14,
-          Mul = 15,
-          Div = 16,
+          Pop = 10,
+          Test = 11,
+          Jump = 12,
+          Label = 13,
+          Add = 14,
+          Sub = 15,
+          Mul = 16,
+          Div = 17,
+          LoadFunction = 18,
         },
 
         InstructionArguments = {
@@ -237,6 +239,9 @@ function Rua.new()
           Push = {
             [1] = "Register",
           },
+          Pop = {
+            [1] = "Register",
+          },
           Test = {
             [1] = "Register",
           },
@@ -265,6 +270,11 @@ function Rua.new()
             [1] = "Register",
             [2] = "Register",
             [3] = "Register",
+          },
+          LoadFunction = {
+            [1] = "Label",
+            [2] = "Register",
+            [3] = "Number",
           },
         },
       },
@@ -926,7 +936,14 @@ function IrGenerator:GenerateIr(State, Ast)
 
   if Ast.Type == "FunctionCall" then
     for _, Argument in pairs(Ast.Arguments) do
-      IrGenerator:GenerateIr(State, Argument, 0)
+      local ArgumentRegister = IrGenerator:GenerateIr(State, Argument)
+
+      State.CurrentIr.Type = "Push"
+      State.CurrentIr.Arguments = {
+        [1] = ArgumentRegister,
+      }
+      IrGenerator:MarkNotUsed(State, ArgumentRegister)
+      IrGenerator:NewIr(State)
     end
 
     local FunctionNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
@@ -945,6 +962,71 @@ function IrGenerator:GenerateIr(State, Ast)
       [1] = FunctionRegister,
     }
     IrGenerator:MarkNotUsed(State, FunctionRegister)
+    IrGenerator:NewIr(State)
+
+    local ResultRegister = IrGenerator:AllocateRegister(State)
+
+    State.CurrentIr.Type = "Push"
+    State.CurrentIr.Arguments = {
+      [1] = ResultRegister,
+    }
+    IrGenerator:NewIr(State)
+
+    return ResultRegister
+  elseif Ast.Type == "Function" then
+    local EndLabel = IrGenerator:NewLabel(State)
+    local FunctionLabel = IrGenerator:NewLabel(State)
+
+    local FunctionNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
+
+    State.CurrentIr.Type = "LoadFunction"
+    State.CurrentIr.Arguments = {
+      [1] = FunctionLabel,
+      [2] = FunctionNameRegister,
+      [3] = #Ast.Arguments,
+    }
+    IrGenerator:MarkNotUsed(State, FunctionNameRegister)
+    IrGenerator:NewIr(State)
+
+    State.CurrentIr.Type = "Jump"
+    State.CurrentIr.Arguments = {
+      [1] = EndLabel,
+    }
+    IrGenerator:NewIr(State)
+
+    State.CurrentIr.Type = "Label"
+    State.CurrentIr.Arguments = {
+      [1] = FunctionLabel,
+    }
+    IrGenerator:NewIr(State)
+
+    for Index = #Ast.Arguments, 1, -1 do
+      local Argument = Ast.Arguments[Index]
+      local ArgumentNameRegister = IrGenerator:ConvertStringToIr(State, Argument.Name)
+      local ArgumentRegister = IrGenerator:AllocateRegister(State)
+
+      State.CurrentIr.Type = "Pop"
+      State.CurrentIr.Arguments = {
+        [1] = ArgumentRegister,
+      }
+      IrGenerator:NewIr(State)
+
+      State.CurrentIr.Type = "LocalVariableAssign"
+      State.CurrentIr.Arguments = {
+        [1] = ArgumentNameRegister,
+        [2] = ArgumentRegister,
+      }
+      IrGenerator:MarkNotUsed(State, ArgumentNameRegister)
+      IrGenerator:MarkNotUsed(State, ArgumentRegister)
+      IrGenerator:NewIr(State)
+    end
+
+    IrGenerator:GenerateIr(State, Ast.Body)
+
+    State.CurrentIr.Type = "Label"
+    State.CurrentIr.Arguments = {
+      [1] = EndLabel,
+    }
     IrGenerator:NewIr(State)
   elseif Ast.Type == "Number" then
     local ResultRegister = IrGenerator:AllocateRegister(State)
@@ -992,16 +1074,16 @@ function IrGenerator:GenerateIr(State, Ast)
     return ResultRegister
   elseif Ast.Type == "VariableAssign" then
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
-    local ResultRegister = IrGenerator:GenerateIr(State, Ast.Value)
+    local VariableRegister = IrGenerator:GenerateIr(State, Ast.Value)
 
     State.CurrentIr.Type = (Ast.Local and "Local" or "Global") .. "VariableAssign"
     State.CurrentIr.Arguments = {
       [1] = VariableNameRegister,
-      [2] = ResultRegister,
+      [2] = VariableRegister,
     }
 
     IrGenerator:MarkNotUsed(State, VariableNameRegister)
-    IrGenerator:MarkNotUsed(State, ResultRegister)
+    IrGenerator:MarkNotUsed(State, VariableRegister)
     IrGenerator:NewIr(State)
   elseif Ast.Type == "Return" then
     local ReturnRegister = IrGenerator:GenerateIr(State, Ast.Value)
@@ -1072,9 +1154,9 @@ function IrGenerator:GenerateIr(State, Ast)
     elseif Ast.Operator == "-" then
       State.CurrentIr.Type = "Sub"
     elseif Ast.Operator == "/" then
-      State.CurrentIr.Type = "Mul"
-    elseif Ast.Operator == "*" then
       State.CurrentIr.Type = "Div"
+    elseif Ast.Operator == "*" then
+      State.CurrentIr.Type = "Mul"
     end
     IrGenerator:NewIr(State)
 
