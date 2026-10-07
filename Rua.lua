@@ -966,7 +966,7 @@ function IrGenerator:GenerateIr(State, Ast)
 
     local ResultRegister = IrGenerator:AllocateRegister(State)
 
-    State.CurrentIr.Type = "Push"
+    State.CurrentIr.Type = "Pop"
     State.CurrentIr.Arguments = {
       [1] = ResultRegister,
     }
@@ -1002,7 +1002,7 @@ function IrGenerator:GenerateIr(State, Ast)
 
     for Index = #Ast.Arguments, 1, -1 do
       local Argument = Ast.Arguments[Index]
-      local ArgumentNameRegister = IrGenerator:ConvertStringToIr(State, Argument.Name)
+      local ArgumentNameRegister = IrGenerator:ConvertStringToIr(State, Argument.Value)
       local ArgumentRegister = IrGenerator:AllocateRegister(State)
 
       State.CurrentIr.Type = "Pop"
