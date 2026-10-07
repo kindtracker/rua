@@ -180,7 +180,7 @@ function Rua.new()
     Bytecode = {
       Program = "",
       ProgramTable = {},
-      Current = "",
+      Lables = {},
       Isa = {
         Opcodes = {
           GetFunction = 1,
@@ -1077,16 +1077,58 @@ function BytecodeGenerator:WriteDouble(State, Value)
   table.insert(State.Bytecode.ProgramTable, string.pack("<d", Value))
 end
 
+function BytecodeGenerator:FindLabels(State)
+  local Offset = 0
+
+  for _, Ir in ipairs(State.Ir.Program) do
+    if Ir.Type == "Label" then
+      local Label = Ir.Arguments[1]
+
+      State.Bytecode.Labels[Label] = Offset
+    else
+      Offset = Offset + BytecodeGenerator:GetInstructionSize(State, Ir)
+    end
+  end
+end
+
 function BytecodeGenerator:Initalize(State)
   State.Bytecode.Program = ""
   State.Bytecode.ProgramTable = {}
+  State.Bytecode.Labels = {}
+  BytecodeGenerator:FindLabels(State)
+end
+
+function BytecodeGenerator:GetInstructionSize(State, Ir)
+  local Size = 1
+
+  for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
+    local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
+
+    if ArgumentType == "Register" then
+      Size = Size + 1
+    elseif ArgumentType == "Number" then
+      Size = Size + 8
+    elseif ArgumentType == "String" then
+      Size = Size + 4 + #ArgumentValue
+    elseif ArgumentType == "Boolean" then
+      Size = Size + 1
+    elseif ArgumentType == "Label" then
+      Size = Size + 4
+    end
+  end
+
+  return Size
 end
 
 function BytecodeGenerator:Generate(State, Ir)
+  if Ir.Type == "Label" then
+    return
+  end
+
   local Instruction = State.Bytecode.Isa.Opcodes[Ir.Type]
   BytecodeGenerator:Write8(State, Instruction)
 
-  for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
+  for ArgumentIndex, ArgumentValue in ipairs(Ir.Arguments) do
     local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
 
     if ArgumentType == "Register" then
@@ -1101,7 +1143,8 @@ function BytecodeGenerator:Generate(State, Ir)
     elseif ArgumentType == "Boolean" then
       BytecodeGenerator:Write8(State, ArgumentValue)
     elseif ArgumentType == "Label" then
-      BytecodeGenerator:Write32(State, ArgumentValue)
+      local LabelAddress = State.Bytecode.Labels[ArgumentValue]
+      BytecodeGenerator:Write32(State, LabelAddress)
     end
   end
 end
@@ -1109,7 +1152,7 @@ end
 function Rua:GenerateBytecode(State)
   BytecodeGenerator:Initalize(State)
 
-  for _, Ir in pairs(State.Ir.Program) do
+  for _, Ir in ipairs(State.Ir.Program) do
     BytecodeGenerator:Generate(State, Ir)
   end
 
