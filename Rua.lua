@@ -1072,8 +1072,9 @@ function BytecodeGenerator:Generate(State, Ir)
     elseif ArgumentType == "Number" then
       BytecodeGenerator:WriteDouble(State, ArgumentValue)
     elseif ArgumentType == "String" then
+      BytecodeGenerator:Write32(State, #ArgumentValue)
       for Index = 1, #ArgumentValue do
-        BytecodeGenerator:Write(State, string.byte(ArgumentValue, Index))
+        BytecodeGenerator:Write8(State, string.byte(ArgumentValue, Index))
       end
     elseif ArgumentType == "Boolean" then
       BytecodeGenerator:Write8(State, ArgumentValue)
@@ -1089,6 +1090,8 @@ function Rua:GenerateBytecode(State)
   for _, Ir in pairs(State.Ir.Program) do
     BytecodeGenerator:Generate(State, Ir)
   end
+
+  State.Bytecode.Program = table.concat(State.Bytecode.ProgramTable)
 end
 
 Rua.Logger = Logger
