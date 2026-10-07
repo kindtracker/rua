@@ -17,7 +17,6 @@
 ]]
 
 local Rua = {}
-Rua.DevMode = true
 
 local _
 
