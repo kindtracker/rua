@@ -1,4 +1,4 @@
-local A = 3
+local A = 5
 local B = 5
 
 if A > B then

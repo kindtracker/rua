@@ -1239,8 +1239,8 @@ function IrGenerator:GenerateIr(State, Ast)
 
     State.CurrentIr.Type = "JumpIfFalseRegister"
     State.CurrentIr.Arguments = {
-      [1] = ResultRegister,
-      [2] = ElseLabel,
+      [1] = ElseLabel,
+      [2] = ResultRegister,
     }
     IrGenerator:MarkNotUsed(State, ResultRegister)
     IrGenerator:NewIr(State)
@@ -1620,38 +1620,36 @@ function Vm:Execute(State)
     local RightRegister = Vm:ReadAndGetRegister(State)
     local ResultRegister = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      if Opcode == "Add" then
-        ResultRegister.Value = LeftRegister.Value + RightRegister.Value
-      elseif Opcode == "Sub" then
-        ResultRegister.Value = LeftRegister.Value - RightRegister.Value
-      elseif Opcode == "Mul" then
-        ResultRegister.Value = LeftRegister.Value * RightRegister.Value
-      elseif Opcode == "Div" then
-        ResultRegister.Value = LeftRegister.Value / RightRegister.Value
-      elseif Opcode == "Mod" then
-        ResultRegister.Value = LeftRegister.Value % RightRegister.Value
-      elseif Opcode == "Pow" then
-        ResultRegister.Value = LeftRegister.Value ^ RightRegister.Value
-      elseif Opcode == "NotEqual" then
-        ResultRegister.Value = LeftRegister.Value ~= RightRegister.Value
-      elseif Opcode == "Equal" then
-        ResultRegister.Value = LeftRegister.Value == RightRegister.Value
-      elseif Opcode == "EqualOrGreaterThan" then
-        ResultRegister.Value = LeftRegister.Value >= RightRegister.Value
-      elseif Opcode == "EqualOrLessThan" then
-        ResultRegister.Value = LeftRegister.Value <= RightRegister.Value
-      elseif Opcode == "GreaterThan" then
-        ResultRegister.Value = LeftRegister.Value > RightRegister.Value
-      elseif Opcode == "LessThan" then
-        ResultRegister.Value = LeftRegister.Value < RightRegister.Value
-      elseif Opcode == "NumberAnd" then
-        ResultRegister.Value = LeftRegister.Value & RightRegister.Value
-      elseif Opcode == "NumberOr" then
-        ResultRegister.Value = LeftRegister.Value | RightRegister.Value
-      elseif Opcode == "NumberXor" then
-        ResultRegister.Value = LeftRegister.Value ~ RightRegister.Value
-      end
+    if Opcode == "Add" then
+      ResultRegister.Value = LeftRegister.Value + RightRegister.Value
+    elseif Opcode == "Sub" then
+      ResultRegister.Value = LeftRegister.Value - RightRegister.Value
+    elseif Opcode == "Mul" then
+      ResultRegister.Value = LeftRegister.Value * RightRegister.Value
+    elseif Opcode == "Div" then
+      ResultRegister.Value = LeftRegister.Value / RightRegister.Value
+    elseif Opcode == "Mod" then
+      ResultRegister.Value = LeftRegister.Value % RightRegister.Value
+    elseif Opcode == "Pow" then
+      ResultRegister.Value = LeftRegister.Value ^ RightRegister.Value
+    elseif Opcode == "NotEqual" then
+      ResultRegister.Value = LeftRegister.Value ~= RightRegister.Value
+    elseif Opcode == "Equal" then
+      ResultRegister.Value = LeftRegister.Value == RightRegister.Value
+    elseif Opcode == "EqualOrGreaterThan" then
+      ResultRegister.Value = LeftRegister.Value >= RightRegister.Value
+    elseif Opcode == "EqualOrLessThan" then
+      ResultRegister.Value = LeftRegister.Value <= RightRegister.Value
+    elseif Opcode == "GreaterThan" then
+      ResultRegister.Value = LeftRegister.Value > RightRegister.Value
+    elseif Opcode == "LessThan" then
+      ResultRegister.Value = LeftRegister.Value < RightRegister.Value
+    elseif Opcode == "NumberAnd" then
+      ResultRegister.Value = LeftRegister.Value & RightRegister.Value
+    elseif Opcode == "NumberOr" then
+      ResultRegister.Value = LeftRegister.Value | RightRegister.Value
+    elseif Opcode == "NumberXor" then
+      ResultRegister.Value = LeftRegister.Value ~ RightRegister.Value
     end
   elseif Opcode == "JumpIfFalseTest" then
     local Address = Vm:Read32(State)
@@ -1669,17 +1667,14 @@ function Vm:Execute(State)
     local Address = Vm:Read32(State)
     local Register = Vm:ReadAndGetRegister(State)
 
-    if not Register.Value then
-      State.Vm.Pc = Address
-    end
-    if Register.Value == 0 or Register.Value == false then
+    if Register.Value == nil or Register.Value == false or Register.Value == 0 then
       State.Vm.Pc = Address
     end
   elseif Opcode == "JumpIfTrueRegister" then
     local Address = Vm:Read32(State)
     local Register = Vm:ReadAndGetRegister(State)
 
-    if Register.Value and Register.Value ~= 0 and Register.Value ~= false then
+    if Register.Value ~= nil and Register.Value ~= false and Register.Value ~= 0 then
       State.Vm.Pc = Address
     end
   elseif Opcode == "Jump" then
