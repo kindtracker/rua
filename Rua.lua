@@ -215,6 +215,7 @@ function Rua.new()
           JumpIfFalseRegister = 30,
           JumpIfTrueTest = 31,
           JumpIfTrueRegister = 31,
+          Return = 32,
         },
 
         InstructionArguments = {
@@ -385,6 +386,8 @@ function Rua.new()
             [1] = "Label",
             [2] = "Register",
           },
+
+          Return = {},
         },
       },
     },
@@ -392,6 +395,7 @@ function Rua.new()
       Pc = 1,
       Registers = {},
       Stack = {},
+      CallStack = {},
       Variables = {},
       Functions = {},
       TestFailed = false,
@@ -1158,7 +1162,13 @@ function IrGenerator:GenerateIr(State, Ast)
       IrGenerator:NewIr(State)
     end
 
-    IrGenerator:GenerateIr(State, Ast.Body)
+    for _, ChildAst in ipairs(Ast.Body) do
+      IrGenerator:GenerateIr(State, ChildAst)
+    end
+
+    State.CurrentIr.Type = "Return"
+    State.CurrentIr.Arguments = {}
+    IrGenerator:NewIr(State)
 
     State.CurrentIr.Type = "Label"
     State.CurrentIr.Arguments = {
@@ -1558,25 +1568,27 @@ function Vm:Execute(State)
   if Opcode == "GetFunction" then
     local FunctionName = Vm:GetStringFromRegister(State)
     local FunctionRegister, FunctionRegisterIndex = Vm:ReadAndGetRegister(State)
+    local Function = State.Vm.Functions[FunctionName] or nil
 
     FunctionRegister.Type = "Function"
-    FunctionRegister.Value = { Name = FunctionName, Function = table.unpack(State.Vm.Functions[FunctionName] or {}) }
+    FunctionRegister.Value = { Name = FunctionName, Function = Function }
   elseif Opcode == "CallFromRegister" then
     local FunctionRegister, Index = Vm:ReadAndGetRegister(State)
 
-    if FunctionRegister.Value.Function == nil then
+    if not FunctionRegister.Value.Function then
       local Function = _G[FunctionRegister.Value.Name]
       if Function then
         local Arguments = {}
 
         while #State.Vm.Stack > 0 do
-          table.insert(Arguments, 1, table.remove(State.Vm.Stack))
+          table.insert(Arguments, 1, table.remove(State.Vm.Stack).Value)
         end
 
         Function(table.unpack(Arguments))
       end
     else
-      State.Vm.Pc = FunctionRegister.Value.Address
+      table.insert(State.Vm.CallStack, State.Vm.Pc)
+      State.Vm.Pc = FunctionRegister.Value.Function.Address
     end
   elseif Opcode == "LoadFunction" then
     local FunctionAddress = Vm:Read32(State)
@@ -1684,7 +1696,10 @@ function Vm:Execute(State)
   elseif Opcode == "Push" then
     local Register = Vm:ReadAndGetRegister(State)
 
-    table.insert(State.Vm.Stack, Register.Value)
+    table.insert(State.Vm.Stack, {
+      Type = Register.Type,
+      Value = Register.Value,
+    })
   elseif Opcode == "Pop" then
     local Register = Vm:ReadAndGetRegister(State)
     local Top = table.remove(State.Vm.Stack)
@@ -1715,6 +1730,9 @@ function Vm:Execute(State)
 
     VariableRegister.Type = Value.Type
     VariableRegister.Value = Value.Value
+  elseif Opcode == "Return" then
+    local ReturnPc = table.remove(State.Vm.CallStack)
+    State.Vm.Pc = ReturnPc
   end
 end
 
