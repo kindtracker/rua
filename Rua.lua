@@ -189,8 +189,8 @@ function Rua.new()
           LoadString = 4,
           LoadBoolean = 5,
           GetVariable = 6,
-          LocalVariableAssign = 7,
-          GlobalVariableAssign = 8,
+          VariableAssign = 7,
+          -- Unused opcode
           Push = 9,
           Pop = 10,
           Test = 11,
@@ -244,12 +244,7 @@ function Rua.new()
             [2] = "Register",
           },
 
-          LocalVariableAssign = {
-            [1] = "Register",
-            [2] = "Register",
-          },
-
-          GlobalVariableAssign = {
+          VariableAssign = {
             [1] = "Register",
             [2] = "Register",
           },
@@ -376,8 +371,7 @@ function Rua.new()
       Pc = 1,
       Registers = {},
       Stack = {},
-      LocalVariables = {},
-      GlobalVariables = {},
+      Variables = {},
       Functions = {},
       SkipInstruction = false,
     },
@@ -1052,7 +1046,7 @@ function IrGenerator:GenerateIr(State, Ast)
   State.CurrentIr = { Arguments = {} }
 
   if Ast.Type == "FunctionCall" then
-    for _, Argument in pairs(Ast.Arguments) do
+    for _, Argument in ipairs(Ast.Arguments) do
       local ArgumentRegister = IrGenerator:GenerateIr(State, Argument)
 
       State.CurrentIr.Type = "Push"
@@ -1128,7 +1122,7 @@ function IrGenerator:GenerateIr(State, Ast)
       }
       IrGenerator:NewIr(State)
 
-      State.CurrentIr.Type = "LocalVariableAssign"
+      State.CurrentIr.Type = "VariableAssign"
       State.CurrentIr.Arguments = {
         [1] = ArgumentNameRegister,
         [2] = ArgumentRegister,
@@ -1193,7 +1187,7 @@ function IrGenerator:GenerateIr(State, Ast)
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
     local VariableRegister = IrGenerator:GenerateIr(State, Ast.Value)
 
-    State.CurrentIr.Type = (Ast.Local and "Local" or "Global") .. "VariableAssign"
+    State.CurrentIr.Type = "VariableAssign"
     State.CurrentIr.Arguments = {
       [1] = VariableNameRegister,
       [2] = VariableRegister,
@@ -1318,7 +1312,7 @@ end
 function Rua:GenerateIr(State)
   IrGenerator:Initalize(State)
 
-  for _, Ast in pairs(State.Ast) do
+  for _, Ast in ipairs(State.Ast) do
     IrGenerator:GenerateIr(State, Ast)
   end
 end
@@ -1374,7 +1368,6 @@ function BytecodeGenerator:GetInstructionSize(State, Ir)
   local Size = 1
 
   for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
-    print(Ir.Type)
     local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
 
     if ArgumentType == "Register" then
@@ -1479,7 +1472,8 @@ end
 
 function Vm:ReadAndGetRegister(State)
   local RegisterIndex = Vm:Read8(State)
-  return State.Vm.Registers[RegisterIndex], RegisterIndex
+  local Register = State.Vm.Registers[RegisterIndex]
+  return Register, RegisterIndex
 end
 
 function Vm:GetStringFromRegister(State)
@@ -1612,7 +1606,6 @@ function Vm:Execute(State)
     if not State.Vm.SkipInstruction then
       State.Vm.Pc = Address
     end
-    -- uhhh
   elseif Opcode == "Push" then
     local Register = Vm:ReadAndGetRegister(State)
 
@@ -1635,16 +1628,24 @@ function Vm:Execute(State)
         State.Vm.SkipInstruction = true
       end
     end
-  elseif TableHasString({ "LocalVariableAssign", "GlobalVariableAssign" }, Opcode) then
+  elseif Opcode == "VariableAssign" then
     local VariableName = Vm:GetStringFromRegister(State)
     local VariableRegister = Vm:ReadAndGetRegister(State)
 
     if not State.Vm.SkipInstruction then
-      if Opcode == "LocalVariableAssign" then
-        State.Vm.LocalVariables[VariableName] = VariableRegister.Value
-      else
-        State.Vm.GlobalVariables[VariableName] = VariableRegister.Value
-      end
+      State.Vm.Variables[VariableName] = {}
+      State.Vm.Variables[VariableName].Type = VariableRegister.Type
+      State.Vm.Variables[VariableName].Value = VariableRegister.Value
+    end
+  elseif Opcode == "GetVariable" then
+    local VariableName = Vm:GetStringFromRegister(State)
+    local VariableRegister = Vm:ReadAndGetRegister(State)
+
+    if not State.Vm.SkipInstruction then
+      local Value = State.Vm.Variables[VariableName]
+
+      VariableRegister.Type = Value.Type
+      VariableRegister.Value = Value.Value
     end
   end
 end
