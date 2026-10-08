@@ -23,7 +23,7 @@ local _
 local BaseIdent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 local BasePunct = "(){}[];,:."
 local BaseDigits = "0123456789"
-local BaseOperators = "!=<>~&|+-*/^%#"
+local BaseOperators = "=<>~&|+-*/^%#"
 local BaseEscape = ""
 
 local BaseKeywords = {
@@ -200,7 +200,18 @@ function Rua.new()
           Sub = 15,
           Mul = 16,
           Div = 17,
-          LoadFunction = 18,
+          Mod = 18,
+          Pow = 19,
+          NotEqual = 20,
+          Equal = 21,
+          EqualOrGreaterThan = 22,
+          EqualOrLessThan = 23,
+          GreaterThan = 24,
+          LessThan = 25,
+          NumberAnd = 26,
+          NumberOr = 27,
+          NumberXor = 28,
+          LoadFunction = 29,
         },
 
         InstructionArguments = {
@@ -208,68 +219,151 @@ function Rua.new()
             [1] = "Register",
             [2] = "Register",
           },
+
           CallFromRegister = {
             [1] = "Register",
           },
+
           LoadNumber = {
             [1] = "Number",
             [2] = "Register",
           },
+
           LoadString = {
             [1] = "String",
             [2] = "Register",
           },
+
           LoadBoolean = {
             [1] = "Boolean",
             [2] = "Register",
           },
+
           GetVariable = {
             [1] = "Register",
             [2] = "Register",
           },
+
           LocalVariableAssign = {
             [1] = "Register",
             [2] = "Register",
           },
+
           GlobalVariableAssign = {
             [1] = "Register",
             [2] = "Register",
           },
+
           Push = {
             [1] = "Register",
           },
+
           Pop = {
             [1] = "Register",
           },
+
           Test = {
             [1] = "Register",
           },
+
           Jump = {
             [1] = "Label",
           },
+
           Label = {
             [1] = "Label",
           },
+
           Add = {
             [1] = "Register",
             [2] = "Register",
             [3] = "Register",
           },
+
           Sub = {
             [1] = "Register",
             [2] = "Register",
             [3] = "Register",
           },
+
           Mul = {
             [1] = "Register",
             [2] = "Register",
             [3] = "Register",
           },
+
           Div = {
             [1] = "Register",
             [2] = "Register",
             [3] = "Register",
           },
+
+          Mod = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          Pow = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          NotEqual = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          Equal = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          EqualOrGreaterThan = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          EqualOrLessThan = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          GreaterThan = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          LessThan = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          NumberAnd = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          NumberOr = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
+          NumberXor = {
+            [1] = "Register",
+            [2] = "Register",
+            [3] = "Register",
+          },
+
           LoadFunction = {
             [1] = "Label",
             [2] = "Register",
@@ -1180,6 +1274,28 @@ function IrGenerator:GenerateIr(State, Ast)
       State.CurrentIr.Type = "Div"
     elseif Ast.Operator == "*" then
       State.CurrentIr.Type = "Mul"
+    elseif Ast.Operator == "%" then
+      State.CurrentIr.Type = "Mod"
+    elseif Ast.Operator == "^" then
+      State.CurrentIr.Type = "Pow"
+    elseif Ast.Operator == "~=" then
+      State.CurrentIr.Type = "NotEqual"
+    elseif Ast.Operator == "==" then
+      State.CurrentIr.Type = "Equal"
+    elseif Ast.Operator == ">=" then
+      State.CurrentIr.Type = "EqualOrGreaterThan"
+    elseif Ast.Operator == "<=" then
+      State.CurrentIr.Type = "EqualOrLessThan"
+    elseif Ast.Operator == ">" then
+      State.CurrentIr.Type = "GreaterThan"
+    elseif Ast.Operator == "<" then
+      State.CurrentIr.Type = "LessThan"
+    elseif Ast.Operator == "&" then
+      State.CurrentIr.Type = "NumberAnd"
+    elseif Ast.Operator == "|" then
+      State.CurrentIr.Type = "NumberOr"
+    elseif Ast.Operator == "~" then
+      State.CurrentIr.Type = "NumberXor"
     end
     IrGenerator:NewIr(State)
 
@@ -1258,6 +1374,7 @@ function BytecodeGenerator:GetInstructionSize(State, Ir)
   local Size = 1
 
   for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
+    print(Ir.Type)
     local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
 
     if ArgumentType == "Register" then
@@ -1433,7 +1550,25 @@ function Vm:Execute(State)
     if not State.Vm.SkipInstruction then
       ResultRegister.Value = String
     end
-  elseif TableHasString({ "Add", "Sub", "Div", "Mul" }, Opcode) then
+  elseif
+    TableHasString({
+      "Add",
+      "Sub",
+      "Mul",
+      "Div",
+      "Mod",
+      "Pow",
+      "NotEqual",
+      "Equal",
+      "EqualOrGreaterThan",
+      "EqualOrLessThan",
+      "GreaterThan",
+      "LessThan",
+      "NumberAnd",
+      "NumberOr",
+      "NumberXor",
+    }, Opcode)
+  then
     local LeftRegister = Vm:ReadAndGetRegister(State)
     local RightRegister = Vm:ReadAndGetRegister(State)
     local ResultRegister = Vm:ReadAndGetRegister(State)
@@ -1443,10 +1578,32 @@ function Vm:Execute(State)
         ResultRegister.Value = LeftRegister.Value + RightRegister.Value
       elseif Opcode == "Sub" then
         ResultRegister.Value = LeftRegister.Value - RightRegister.Value
-      elseif Opcode == "Div" then
-        ResultRegister.Value = LeftRegister.Value / RightRegister.Value
       elseif Opcode == "Mul" then
         ResultRegister.Value = LeftRegister.Value * RightRegister.Value
+      elseif Opcode == "Div" then
+        ResultRegister.Value = LeftRegister.Value / RightRegister.Value
+      elseif Opcode == "Mod" then
+        ResultRegister.Value = LeftRegister.Value % RightRegister.Value
+      elseif Opcode == "Pow" then
+        ResultRegister.Value = LeftRegister.Value ^ RightRegister.Value
+      elseif Opcode == "NotEqual" then
+        ResultRegister.Value = LeftRegister.Value ~= RightRegister.Value
+      elseif Opcode == "Equal" then
+        ResultRegister.Value = LeftRegister.Value == RightRegister.Value
+      elseif Opcode == "EqualOrGreaterThan" then
+        ResultRegister.Value = LeftRegister.Value >= RightRegister.Value
+      elseif Opcode == "EqualOrLessThan" then
+        ResultRegister.Value = LeftRegister.Value <= RightRegister.Value
+      elseif Opcode == "GreaterThan" then
+        ResultRegister.Value = LeftRegister.Value > RightRegister.Value
+      elseif Opcode == "LessThan" then
+        ResultRegister.Value = LeftRegister.Value < RightRegister.Value
+      elseif Opcode == "NumberAnd" then
+        ResultRegister.Value = LeftRegister.Value & RightRegister.Value
+      elseif Opcode == "NumberOr" then
+        ResultRegister.Value = LeftRegister.Value | RightRegister.Value
+      elseif Opcode == "NumberXor" then
+        ResultRegister.Value = LeftRegister.Value ~ RightRegister.Value
       end
     end
   elseif Opcode == "Jump" then
@@ -1528,7 +1685,5 @@ Rua.Vm = Vm
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Register-based VM
-
--- TODO: A working register-based VM
 
 return Rua
