@@ -1318,7 +1318,13 @@ function IrGenerator:IrToText(Ir, Level)
   if Ir.Type == "Label" then
     return string.format("Label %d:\n", Ir.Arguments[1])
   else
-    return string.format("%s%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Ir.Arguments, ", "))
+    local Arguments = {}
+
+    for _, Argument in ipairs(Ir.Arguments) do
+      table.insert(Arguments, string.format("%q", Argument))
+    end
+
+    return string.format("%s%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Arguments, ", "))
   end
 end
 
