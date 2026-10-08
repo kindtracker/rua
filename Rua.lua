@@ -190,7 +190,7 @@ function Rua.new()
           LoadBoolean = 5,
           GetVariable = 6,
           VariableAssign = 7,
-          -- Unused opcode
+          JumpIfFalseTest = 8,
           Push = 9,
           Pop = 10,
           Test = 11,
@@ -212,6 +212,9 @@ function Rua.new()
           NumberOr = 27,
           NumberXor = 28,
           LoadFunction = 29,
+          JumpIfFalseRegister = 30,
+          JumpIfTrueTest = 31,
+          JumpIfTrueRegister = 31,
         },
 
         InstructionArguments = {
@@ -363,6 +366,24 @@ function Rua.new()
             [1] = "Label",
             [2] = "Register",
             [3] = "Number",
+          },
+
+          JumpIfFalseTest = {
+            [1] = "Label",
+          },
+
+          JumpIfFalseRegister = {
+            [1] = "Label",
+            [2] = "Register",
+          },
+
+          JumpIfTrueTest = {
+            [1] = "Label",
+          },
+
+          JumpIfTrueRegister = {
+            [1] = "Label",
+            [2] = "Register",
           },
         },
       },
@@ -1216,17 +1237,12 @@ function IrGenerator:GenerateIr(State, Ast)
 
     local ResultRegister = IrGenerator:GenerateIr(State, Ast.Condition)
 
-    State.CurrentIr.Type = "Test"
+    State.CurrentIr.Type = "JumpIfFalseRegister"
     State.CurrentIr.Arguments = {
       [1] = ResultRegister,
+      [2] = ElseLabel,
     }
     IrGenerator:MarkNotUsed(State, ResultRegister)
-    IrGenerator:NewIr(State)
-
-    State.CurrentIr.Type = "Jump"
-    State.CurrentIr.Arguments = {
-      [1] = ElseLabel,
-    }
     IrGenerator:NewIr(State)
 
     IrGenerator:GenerateBlock(State, Ast.Body)
@@ -1637,10 +1653,33 @@ function Vm:Execute(State)
         ResultRegister.Value = LeftRegister.Value ~ RightRegister.Value
       end
     end
-  elseif Opcode == "JumpIfFalse" then
+  elseif Opcode == "JumpIfFalseTest" then
     local Address = Vm:Read32(State)
 
     if State.Vm.TestFailed then
+      State.Vm.Pc = Address
+    end
+  elseif Opcode == "JumpIfTrueTest" then
+    local Address = Vm:Read32(State)
+
+    if not State.Vm.TestFailed then
+      State.Vm.Pc = Address
+    end
+  elseif Opcode == "JumpIfFalseRegister" then
+    local Address = Vm:Read32(State)
+    local Register = Vm:ReadAndGetRegister(State)
+
+    if not Register.Value then
+      State.Vm.Pc = Address
+    end
+    if Register.Value == 0 or Register.Value == false then
+      State.Vm.Pc = Address
+    end
+  elseif Opcode == "JumpIfTrueRegister" then
+    local Address = Vm:Read32(State)
+    local Register = Vm:ReadAndGetRegister(State)
+
+    if Register.Value and Register.Value ~= 0 and Register.Value ~= false then
       State.Vm.Pc = Address
     end
   elseif Opcode == "Jump" then
