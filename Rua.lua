@@ -373,7 +373,7 @@ function Rua.new()
       Stack = {},
       Variables = {},
       Functions = {},
-      SkipInstruction = false,
+      TestFailed = false,
     },
   }
 end
@@ -409,7 +409,7 @@ function Rua:Run(State, FileName)
 
   if Rua.DevMode then
     local IrText = Rua.IrGenerator:ToText(State)
-    io.open("Dev.rua.ir", "w"):write(IrText)
+    io.open("Dev.rua.lua", "w"):write(IrText)
   end
 
   if Rua.DevMode then
@@ -1316,7 +1316,7 @@ end
 
 function IrGenerator:IrToText(Ir, Level)
   if Ir.Type == "Label" then
-    return string.format("Label %d:\n", Ir.Arguments[1])
+    return string.format("function Label%d()\n", Ir.Arguments[1])
   else
     local Arguments = {}
 
@@ -1331,14 +1331,26 @@ end
 function IrGenerator:ToText(State)
   local Text = ""
   local Level = 0
+  local NotFirstLabel = false
 
   for _, Ir in ipairs(State.Ir.Program) do
     if Ir.Type == "Label" then
       Level = 1
+      if NotFirstLabel then
+        Text = Text .. "end\n"
+      end
+      Text = Text .. "\n"
+      NotFirstLabel = true
+    end
+    if Ir.Type == "Test" then
       Text = Text .. "\n"
     end
 
     Text = Text .. IrGenerator:IrToText(Ir, Level)
+  end
+
+  if NotFirstLabel then
+    Text = Text .. "end"
   end
 
   return Text
@@ -1531,54 +1543,44 @@ function Vm:Execute(State)
     local FunctionName = Vm:GetStringFromRegister(State)
     local FunctionRegister, FunctionRegisterIndex = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      FunctionRegister.Type = "Function"
-      FunctionRegister.Value = { Name = FunctionName, Function = table.unpack(State.Vm.Functions[FunctionName] or {}) }
-    end
+    FunctionRegister.Type = "Function"
+    FunctionRegister.Value = { Name = FunctionName, Function = table.unpack(State.Vm.Functions[FunctionName] or {}) }
   elseif Opcode == "CallFromRegister" then
     local FunctionRegister, Index = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      if FunctionRegister.Value.Function == nil then
-        local Function = _G[FunctionRegister.Value.Name]
-        if Function then
-          local Arguments = {}
+    if FunctionRegister.Value.Function == nil then
+      local Function = _G[FunctionRegister.Value.Name]
+      if Function then
+        local Arguments = {}
 
-          while #State.Vm.Stack > 0 do
-            table.insert(Arguments, 1, table.remove(State.Vm.Stack))
-          end
-
-          Function(table.unpack(Arguments))
+        while #State.Vm.Stack > 0 do
+          table.insert(Arguments, 1, table.remove(State.Vm.Stack))
         end
-      else
-        State.Vm.Pc = FunctionRegister.Value.Address
+
+        Function(table.unpack(Arguments))
       end
+    else
+      State.Vm.Pc = FunctionRegister.Value.Address
     end
   elseif Opcode == "LoadFunction" then
     local FunctionAddress = Vm:Read32(State)
     local FunctionName = Vm:GetStringFromRegister(State)
     local FunctionArgumentCount = Vm:ReadDouble(State)
 
-    if not State.Vm.SkipInstruction then
-      State.Vm.Functions[FunctionName] = {
-        Address = FunctionAddress,
-        ArgumentCount = FunctionArgumentCount,
-      }
-    end
+    State.Vm.Functions[FunctionName] = {
+      Address = FunctionAddress,
+      ArgumentCount = FunctionArgumentCount,
+    }
   elseif Opcode == "LoadNumber" then
     local Number = Vm:ReadDouble(State)
     local ResultRegister = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      ResultRegister.Value = Number
-    end
+    ResultRegister.Value = Number
   elseif Opcode == "LoadString" then
     local String = Vm:ReadString(State)
     local ResultRegister = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      ResultRegister.Value = String
-    end
+    ResultRegister.Value = String
   elseif
     TableHasString({
       "Add",
@@ -1635,53 +1637,50 @@ function Vm:Execute(State)
         ResultRegister.Value = LeftRegister.Value ~ RightRegister.Value
       end
     end
+  elseif Opcode == "JumpIfFalse" then
+    local Address = Vm:Read32(State)
+
+    if State.Vm.TestFailed then
+      State.Vm.Pc = Address
+    end
   elseif Opcode == "Jump" then
     local Address = Vm:Read32(State)
 
-    if not State.Vm.SkipInstruction then
-      State.Vm.Pc = Address
-    end
+    State.Vm.Pc = Address
   elseif Opcode == "Push" then
     local Register = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      table.insert(State.Vm.Stack, Register.Value)
-    end
+    table.insert(State.Vm.Stack, Register.Value)
   elseif Opcode == "Pop" then
     local Register = Vm:ReadAndGetRegister(State)
     local Top = table.remove(State.Vm.Stack)
 
-    if not State.Vm.SkipInstruction and Top then
+    if Top == nil then
+      Register.Type = "Nil"
+      Register.Value = nil
+    else
       Register.Type = Top.Type
       Register.Value = Top.Value
     end
   elseif Opcode == "Test" then
     local Register = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      if Register.Value ~= 0 then
-        State.Vm.SkipInstruction = true
-      end
-    end
+    State.Vm.SkipInstruction = true
   elseif Opcode == "VariableAssign" then
     local VariableName = Vm:GetStringFromRegister(State)
     local VariableRegister = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      State.Vm.Variables[VariableName] = {}
-      State.Vm.Variables[VariableName].Type = VariableRegister.Type
-      State.Vm.Variables[VariableName].Value = VariableRegister.Value
-    end
+    State.Vm.Variables[VariableName] = {}
+    State.Vm.Variables[VariableName].Type = VariableRegister.Type
+    State.Vm.Variables[VariableName].Value = VariableRegister.Value
   elseif Opcode == "GetVariable" then
     local VariableName = Vm:GetStringFromRegister(State)
     local VariableRegister = Vm:ReadAndGetRegister(State)
 
-    if not State.Vm.SkipInstruction then
-      local Value = State.Vm.Variables[VariableName]
+    local Value = State.Vm.Variables[VariableName]
 
-      VariableRegister.Type = Value.Type
-      VariableRegister.Value = Value.Value
-    end
+    VariableRegister.Type = Value.Type
+    VariableRegister.Value = Value.Value
   end
 end
 
