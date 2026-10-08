@@ -408,6 +408,11 @@ function Rua:Run(State, FileName)
   end
 
   if Rua.DevMode then
+    local IrText = Rua.IrGenerator:ToText(State)
+    io.open("Dev.rua.ir", "w"):write(IrText)
+  end
+
+  if Rua.DevMode then
     PrintTable(State.Ir.Program)
     io.write("\n")
   end
@@ -1307,6 +1312,30 @@ function IrGenerator:Initalize(State)
   for _ = 1, 256 do
     table.insert(State.Ir.Registers, false)
   end
+end
+
+function IrGenerator:IrToText(Ir, Level)
+  if Ir.Type == "Label" then
+    return string.format("Label %d:\n", Ir.Arguments[1])
+  else
+    return string.format("%s%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Ir.Arguments, ", "))
+  end
+end
+
+function IrGenerator:ToText(State)
+  local Text = ""
+  local Level = 0
+
+  for _, Ir in ipairs(State.Ir.Program) do
+    if Ir.Type == "Label" then
+      Level = 1
+      Text = Text .. "\n"
+    end
+
+    Text = Text .. IrGenerator:IrToText(Ir, Level)
+  end
+
+  return Text
 end
 
 function Rua:GenerateIr(State)
