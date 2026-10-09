@@ -224,8 +224,7 @@ function Rua:Run(State, FileName)
   end
 
   if Rua.DevMode then
-    io.write(State.Lua.Program)
-    io.write("\n")
+    io.open("Dev.lua", "w"):write(State.Lua.Program)
   end
 end
 
@@ -1183,7 +1182,7 @@ function LuaGenerator:IrToLua(Ir, Level)
       table.insert(Arguments, string.format("%q", Argument))
     end
 
-    return string.format("%s%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Arguments, ", "))
+    return string.format("%sRuaRuntime.%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Arguments, ", "))
   end
 end
 
@@ -1222,6 +1221,60 @@ end
 function Rua:GenerateLua(State)
   LuaGenerator:Initalize(State)
   LuaGenerator:Generate(State)
+end
+
+local RuaRuntime = {}
+
+function RuaRuntime:Initalize()
+  RuaRuntime.Registers = {}
+  RuaRuntime.Variables = {}
+  RuaRuntime.Functions = {}
+  RuaRuntime.Stack = {}
+end
+
+function RuaRuntime:GetRegister(RegisterIndex)
+  local Register = RuaRuntime.Registers[RegisterIndex]
+
+  if Register == nil then
+    RuaRuntime.Registers[RegisterIndex] = { Type = "Nil" }
+    return { Type = "Nil" }
+  end
+
+  return Register
+end
+
+function RuaRuntime:GetValueFromRegister(RegisterIndex)
+  local Register = RuaRuntime:GetRegister(RegisterIndex)
+  return Register.Value
+end
+
+function RuaRuntime:SetRegister(RegisterIndex, Register)
+  RuaRuntime.Registers[RegisterIndex] = Register
+end
+
+function RuaRuntime.LoadString(String, Register)
+  RuaRuntime.Registers[Register] = {
+    Type = "String",
+    Value = String,
+  }
+end
+
+function RuaRuntime.Push(RegisterIndex)
+  local Register = RuaRuntime.Registers[RegisterIndex]
+  table.insert(RuaRuntime.Stack, { Type = Register.Type, Value = Register.Value })
+end
+
+function RuaRuntime.GetFunction(FunctionNameRegister, FunctionRegister)
+  local FunctionName = RuaRuntime:GetValueFromRegister(FunctionNameRegister)
+  local Function = RuaRuntime.Functions[FunctionName]
+
+  RuaRuntime.Registers[FunctionRegister] = {
+    Type = "Function",
+    Value = {
+      Name = FunctionName,
+      Address = Function,
+    },
+  }
 end
 
 Rua.Logger = Logger
