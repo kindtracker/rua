@@ -236,6 +236,8 @@ function Rua:Run(State, FileName)
   if Rua.DevMode then
     io.open("Dev.lua", "w"):write(State.Lua.Program)
   end
+
+  Rua:ExecuteGeneratedLua(State)
 end
 
 local Logger = {}
@@ -1192,7 +1194,7 @@ function LuaGenerator:IrToLua(Ir, Level)
       table.insert(Arguments, string.format("%q", Argument))
     end
 
-    return string.format("%sRuaRuntime.%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Arguments, ", "))
+    return string.format("%sRuaRuntime:%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Arguments, ", "))
   end
 end
 
@@ -1236,18 +1238,18 @@ end
 local RuaRuntime = {}
 
 function RuaRuntime:Initialize(State)
-  State.Runtime.Registers = {}
-  State.Runtime.Variables = {}
-  State.Runtime.Functions = {}
-  State.Runtime.Stack = {}
+  State.Registers = {}
+  State.Variables = {}
+  State.Functions = {}
+  State.Stack = {}
 end
 
 function RuaRuntime:GetRegister(State, RegisterIndex)
-  local Register = State.Runtime.Registers[RegisterIndex]
+  local Register = State.Registers[RegisterIndex]
 
   if Register == nil then
     Register = { Type = "Nil" }
-    State.Runtime.Registers[RegisterIndex] = Register
+    State.Registers[RegisterIndex] = Register
   end
 
   return Register
@@ -1258,17 +1260,21 @@ function RuaRuntime:GetValueFromRegister(State, RegisterIndex)
 end
 
 function RuaRuntime:SetRegister(State, RegisterIndex, Register)
-  State.Runtime.Registers[RegisterIndex] = Register
+  State.Registers[RegisterIndex] = Register
 end
 
-function RuaRuntime:LoadString(State, String, RegisterIndex)
-  State.Runtime.Registers[RegisterIndex] = {
+function RuaRuntime:LoadString(String, RegisterIndex)
+  local State = self.State
+
+  State.Registers[RegisterIndex] = {
     Type = "String",
     Value = String,
   }
 end
 
-function RuaRuntime:Push(State, RegisterIndex)
+function RuaRuntime:Push(RegisterIndex)
+  local State = self.State
+
   local Register = RuaRuntime:GetRegister(State, RegisterIndex)
 
   table.insert(State.Stack, {
@@ -1277,28 +1283,37 @@ function RuaRuntime:Push(State, RegisterIndex)
   })
 end
 
-function RuaRuntime:Pop(State, RegisterIndex)
+function RuaRuntime:Pop(RegisterIndex)
+  local State = self.State
+
   local Register = RuaRuntime:GetRegister(State, RegisterIndex)
-  local Value = table.remove(State.Runtime.Stack)
+  local Value = table.remove(State.Stack)
 
   Register.Type = Value.Type
   Register.Value = Value.Value
 end
 
-function RuaRuntime.GetFunction(FunctionNameRegister, FunctionRegister)
-  local FunctionName = RuaRuntime:GetValueFromRegister(FunctionNameRegister)
-  local Function = RuaRuntime.Functions[FunctionName]
+function RuaRuntime:GetFunction(FunctionNameRegister, FunctionRegister)
+  local State = self.State
 
-  RuaRuntime.Runtime.Registers[FunctionRegister] = {
+  local FunctionName = RuaRuntime:GetValueFromRegister(State, FunctionNameRegister)
+  local Function = State.Functions[FunctionName]
+
+  State.Registers[FunctionRegister] = {
     Type = "Function",
     Value = { Name = FunctionName, Function = Function },
   }
 end
 
-function RuaRuntime.CallFromRegister(FunctionRegister)
-  local Function = RuaRuntime:GetValueFromRegister(FunctionRegister)
+function RuaRuntime:CallFromRegister(FunctionRegister)
+  local State = self.State
 
-  local Arguments = RuaRuntime.Stack
+  local Function = RuaRuntime:GetValueFromRegister(State, FunctionRegister)
+
+  local Arguments = State.Stack
+  for Index, Argument in ipairs(Arguments) do
+    Arguments[Index] = Argument.Value
+  end
 
   if Function.Function then
     Function.Function(table.unpack(Arguments))
@@ -1308,10 +1323,34 @@ function RuaRuntime.CallFromRegister(FunctionRegister)
   end
 end
 
+local LuaExecutor = {}
+
+function LuaExecutor:Execute(State)
+  local Environment = {
+    RuaRuntime = RuaRuntime,
+  }
+  local Chunk, Error = load(State.Lua.Program, "RuaGenerated", "t", Environment)
+  if not Chunk then
+    Logger:Error(State, "Failed to compile generated Lua: %s", Error)
+    return
+  end
+
+  Environment.RuaRuntime.State = State.Runtime
+
+  return Chunk()
+end
+
+function Rua:ExecuteGeneratedLua(State)
+  LuaExecutor:Execute(State)
+end
+
 Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
 Rua.IrGenerator = IrGenerator
+Rua.LuaGenerator = LuaGenerator
+Rua.RuaRunTime = RuaRuntime
+Rua.LuaExecutor = LuaExecutor
 
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> LuaGenerator -> Lua
