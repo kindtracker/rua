@@ -1463,7 +1463,7 @@ function BytecodeGenerator:GetInstructionSize(State, Ir)
   for Index, ArgumentValue in pairs(Ir.Arguments) do
     local ArgumentType = Schema[Index].Type
 
-    if ArgumentType == "Register" then
+    if TableHasString({ "Register", "RegisterString", "RegisterFunction" }, ArgumentType) then
       Size = Size + 1
     elseif ArgumentType == "Number" then
       Size = Size + 8
