@@ -178,231 +178,7 @@ function Rua.new()
     Stop = false,
     Ir = { Program = {}, LabelCount = 0, Registers = {} },
     ShowFaultLine = true,
-    Bytecode = {
-      Program = "",
-      ProgramTable = {},
-      Lables = {},
-      Isa = {
-        Opcodes = {
-          GetFunction = 1,
-          CallFromRegister = 2,
-          LoadNumber = 3,
-          LoadString = 4,
-          LoadBoolean = 5,
-          GetVariable = 6,
-          VariableAssign = 7,
-          JumpIfFalseTest = 8,
-          Push = 9,
-          Pop = 10,
-          Test = 11,
-          Jump = 12,
-          Label = 13,
-          Add = 14,
-          Sub = 15,
-          Mul = 16,
-          Div = 17,
-          Mod = 18,
-          Pow = 19,
-          NotEqual = 20,
-          Equal = 21,
-          EqualOrGreaterThan = 22,
-          EqualOrLessThan = 23,
-          GreaterThan = 24,
-          LessThan = 25,
-          NumberAnd = 26,
-          NumberOr = 27,
-          NumberXor = 28,
-          LoadFunction = 29,
-          JumpIfFalseRegister = 30,
-          JumpIfTrueTest = 31,
-          JumpIfTrueRegister = 31,
-          Return = 32,
-        },
-
-        InstructionArguments = {
-          GetFunction = {
-            [1] = { Type = "RegisterString", Name = "FunctionName" },
-            [2] = { Type = "Register", Name = "FunctionRegister" },
-          },
-
-          CallFromRegister = {
-            [1] = { Type = "RegisterFunction", Name = "FunctionRegister" },
-          },
-
-          LoadNumber = {
-            [1] = { Type = "Number", Name = "Number" },
-            [2] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          LoadString = {
-            [1] = { Type = "String", Name = "String" },
-            [2] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          LoadBoolean = {
-            [1] = { Type = "Boolean", Name = "Boolean" },
-            [2] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          GetVariable = {
-            [1] = { Type = "RegisterString", Name = "VariableName" },
-            [2] = { Type = "Register", Name = "VariableRegister" },
-          },
-
-          VariableAssign = {
-            [1] = { Type = "RegisterString", Name = "VariableName" },
-            [2] = { Type = "Register", Name = "VariableRegister" },
-          },
-
-          Push = {
-            [1] = { Type = "Register", Name = "FromRegister" },
-          },
-
-          Pop = {
-            [1] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Test = {
-            [1] = { Type = "Register", Name = "CheckRegister" },
-          },
-
-          Jump = {
-            [1] = { Type = "Label", Name = "TargetAddress" },
-          },
-
-          Label = {
-            [1] = { Type = "Label", Name = "TargetAddress" },
-          },
-
-          Add = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Sub = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Mul = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Div = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Mod = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Pow = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          NotEqual = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          Equal = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          EqualOrGreaterThan = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          EqualOrLessThan = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          GreaterThan = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          LessThan = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          NumberAnd = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          NumberOr = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          NumberXor = {
-            [1] = { Type = "Register", Name = "LeftRegister" },
-            [2] = { Type = "Register", Name = "RightRegister" },
-            [3] = { Type = "Register", Name = "ResultRegister" },
-          },
-
-          LoadFunction = {
-            [1] = { Type = "Label", Name = "FunctionAddress" },
-            [2] = { Type = "Register", Name = "FunctionName" },
-            [3] = { Type = "Number", Name = "FunctionArgumentCount" },
-          },
-
-          JumpIfFalseTest = {
-            [1] = { Type = "Label", Name = "ToAddress" },
-          },
-
-          JumpIfFalseRegister = {
-            [1] = { Type = "Label", Name = "ToAddress" },
-            [2] = { Type = "Register", Name = "CheckRegister" },
-          },
-
-          JumpIfTrueTest = {
-            [1] = { Type = "Label", Name = "ToAddress" },
-          },
-
-          JumpIfTrueRegister = {
-            [1] = { Type = "Label", Name = "ToAddress" },
-            [2] = { Type = "Register", Name = "CheckRegister" },
-          },
-
-          Return = {},
-        },
-      },
-    },
-    Vm = {
-      Pc = 1,
-      Registers = {},
-      Stack = {},
-      CallStack = {},
-      Variables = {},
-      Functions = {},
-      Arguments = {},
-      Opcode = "",
-      TestFailed = false,
-    },
+    Lua = { Program = "" },
   }
 end
 
@@ -438,12 +214,17 @@ function Rua:Run(State, FileName)
   end
 
   if Rua.DevMode then
-    local IrText = Rua.IrGenerator:ToText(State)
-    io.open("Dev.lua", "w"):write(IrText)
+    PrintTable(State.Ir.Program)
+    io.write("\n")
+  end
+
+  Rua:GenerateLua(State)
+  if State.Stop then
+    return
   end
 
   if Rua.DevMode then
-    PrintTable(State.Ir.Program)
+    io.write(State.Lua.Program)
     io.write("\n")
   end
 end
@@ -1378,7 +1159,21 @@ function IrGenerator:Initalize(State)
   end
 end
 
-function IrGenerator:IrToText(Ir, Level)
+function Rua:GenerateIr(State)
+  IrGenerator:Initalize(State)
+
+  for _, Ast in ipairs(State.Ast) do
+    IrGenerator:GenerateIr(State, Ast)
+  end
+end
+
+local LuaGenerator = {}
+
+function LuaGenerator:Initalize(State)
+  State.Lua.Program = ""
+end
+
+function LuaGenerator:IrToLua(Ir, Level)
   if Ir.Type == "Label" then
     return string.format("function Label%d()\n", Ir.Arguments[1])
   else
@@ -1392,8 +1187,8 @@ function IrGenerator:IrToText(Ir, Level)
   end
 end
 
-function IrGenerator:ToText(State)
-  local Text = ""
+function LuaGenerator:IrProgramToLua(State)
+  local Lua = ""
   local Level = 0
   local NotFirstLabel = false
 
@@ -1401,31 +1196,32 @@ function IrGenerator:ToText(State)
     if Ir.Type == "Label" then
       Level = 1
       if NotFirstLabel then
-        Text = Text .. "end\n"
+        Lua = Lua .. "end\n"
       end
-      Text = Text .. "\n"
+      Lua = Lua .. "\n"
       NotFirstLabel = true
     end
     if Ir.Type == "Test" then
-      Text = Text .. "\n"
+      Lua = Lua .. "\n"
     end
 
-    Text = Text .. IrGenerator:IrToText(Ir, Level)
+    Lua = Lua .. LuaGenerator:IrToLua(Ir, Level)
   end
 
   if NotFirstLabel then
-    Text = Text .. "end"
+    Lua = Lua .. "end"
   end
 
-  return Text
+  return Lua
 end
 
-function Rua:GenerateIr(State)
-  IrGenerator:Initalize(State)
+function LuaGenerator:Generate(State)
+  State.Lua.Program = LuaGenerator:IrProgramToLua(State)
+end
 
-  for _, Ast in ipairs(State.Ast) do
-    IrGenerator:GenerateIr(State, Ast)
-  end
+function Rua:GenerateLua(State)
+  LuaGenerator:Initalize(State)
+  LuaGenerator:Generate(State)
 end
 
 Rua.Logger = Logger
