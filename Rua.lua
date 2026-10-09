@@ -235,7 +235,7 @@ function Rua.new()
 
           LoadString = {
             [1] = { Type = "String", Name = "String" },
-            [2] = { Type = "Register", Name = "ResultString" },
+            [2] = { Type = "Register", Name = "ResultRegister" },
           },
 
           LoadBoolean = {
@@ -269,7 +269,6 @@ function Rua.new()
             [1] = { Type = "Label", Name = "TargetAddress" },
           },
 
-          -- Not a real instruction
           Label = {
             [1] = { Type = "Label", Name = "TargetAddress" },
           },
@@ -1442,9 +1441,10 @@ end
 
 function BytecodeGenerator:GetInstructionSize(State, Ir)
   local Size = 1
+  local Schema = State.Bytecode.Isa.InstructionArguments[Ir.Type]
 
-  for ArgumentIndex, ArgumentValue in pairs(Ir.Arguments) do
-    local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
+  for Index, ArgumentValue in pairs(Ir.Arguments) do
+    local ArgumentType = Schema[Index].Type
 
     if ArgumentType == "Register" then
       Size = Size + 1
@@ -1470,8 +1470,10 @@ function BytecodeGenerator:Generate(State, Ir)
   local Instruction = State.Bytecode.Isa.Opcodes[Ir.Type]
   BytecodeGenerator:Write8(State, Instruction)
 
-  for ArgumentIndex, ArgumentValue in ipairs(Ir.Arguments) do
-    local ArgumentType = State.Bytecode.Isa.InstructionArguments[Ir.Type][ArgumentIndex]
+  local Schema = State.Bytecode.Isa.InstructionArguments[Ir.Type]
+
+  for Index, ArgumentValue in ipairs(Ir.Arguments) do
+    local ArgumentType = Schema[Index].Type
 
     if ArgumentType == "Register" then
       BytecodeGenerator:Write8(State, ArgumentValue)
@@ -1592,6 +1594,10 @@ function Vm:Decode(State)
         Logger:Error(State, "Expected register's type as a function")
         return
       end
+
+      if TableHasString({ "String", "Function" }, Type) then
+        Value = Value.Value
+      end
     elseif Type == "Number" then
       Value = Vm:ReadDouble(State)
     elseif Type == "String" then
@@ -1615,8 +1621,6 @@ end
 function Vm:Execute(State)
   local Arguments = State.Vm.Arguments
   local Opcode = State.Vm.Opcode
-
-  PrintTable(State.Vm.Arguments)
 
   if Opcode == "GetFunction" then
     local FunctionName = Arguments.FunctionName.Value
@@ -1661,7 +1665,7 @@ function Vm:Execute(State)
     local ResultRegister = Arguments.ResultRegister
     ResultRegister.Value = Arguments.Number
   elseif Opcode == "LoadString" then
-    local ResultRegister = Arguments.ResultString
+    local ResultRegister = Arguments.ResultRegister
     ResultRegister.Value = Arguments.String
   elseif Opcode == "LoadBoolean" then
     local ResultRegister = Arguments.ResultRegister
