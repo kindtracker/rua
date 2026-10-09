@@ -85,6 +85,7 @@ local Ansi = {
   Reset = "\27[0m",
   Yellow = "\27[33m",
   Red = "\27[31m",
+  Blue = "\27[38;2;100;200;255m",
 }
 
 local function StringHasLetter(String, Letter)
@@ -499,7 +500,14 @@ function Logger:Error(State, ...)
   State.Stop = true
 
   if Rua.DevMode then
-    io.write(debug.traceback():gsub("stack traceback:\n", "") .. "\n")
+    io.write(
+      string.format(
+        "%sLua:%s traceback:\n%s\n",
+        Ansi.Blue,
+        Ansi.Reset,
+        debug.traceback():gsub("stack traceback:\n", ""):gsub("	", "   ")
+      )
+    )
   end
 end
 
