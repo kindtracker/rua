@@ -1185,8 +1185,12 @@ function LuaGenerator:Initalize(State)
 end
 
 function LuaGenerator:IrToLua(Ir, Level)
+  local Tab = ("  "):rep(Level)
+
   if Ir.Type == "Label" then
     return string.format("function Label%d()\n", Ir.Arguments[1])
+  elseif Ir.Type == "Jump" then
+    return string.format("%sRuaRuntime:Jump(Label%s)\n", Tab, Ir.Arguments[1])
   else
     local Arguments = {}
 
@@ -1194,34 +1198,32 @@ function LuaGenerator:IrToLua(Ir, Level)
       table.insert(Arguments, string.format("%q", Argument))
     end
 
-    return string.format("%sRuaRuntime:%s(%s)\n", ("  "):rep(Level), Ir.Type, table.concat(Arguments, ", "))
+    return string.format("%sRuaRuntime:%s(%s)\n", Tab, Ir.Type, table.concat(Arguments, ", "))
   end
 end
 
 function LuaGenerator:IrProgramToLua(State)
   local Lua = ""
-  local Level = 0
-  local NotFirstLabel = false
+  local Level = 1
+  local HasLabel = false
+
+  Lua = Lua .. "function Main()\n"
 
   for _, Ir in ipairs(State.Ir.Program) do
     if Ir.Type == "Label" then
-      Level = 1
-      if NotFirstLabel then
-        Lua = Lua .. "end\n"
-      end
-      Lua = Lua .. "\n"
-      NotFirstLabel = true
+      HasLabel = true
+      Lua = Lua .. "end\n\n"
+      Lua = Lua .. string.format("function Label%d()\n", Ir.Arguments[1])
+    else
+      Lua = Lua .. LuaGenerator:IrToLua(Ir, Level)
     end
-    if Ir.Type == "Test" then
-      Lua = Lua .. "\n"
-    end
-
-    Lua = Lua .. LuaGenerator:IrToLua(Ir, Level)
   end
 
-  if NotFirstLabel then
-    Lua = Lua .. "end"
+  if HasLabel then
+    Lua = Lua .. "end\n"
   end
+
+  Lua = Lua .. "\nMain()"
 
   return Lua
 end
@@ -1322,6 +1324,8 @@ function RuaRuntime:CallFromRegister(FunctionRegister)
     Function.Function(table.unpack(Arguments))
   end
 end
+
+function RuaRuntime:LoadFunction() end
 
 local LuaExecutor = {}
 
