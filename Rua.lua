@@ -1680,12 +1680,15 @@ function Vm:Execute(State)
     }
   elseif Opcode == "LoadNumber" then
     local ResultRegister = Arguments.ResultRegister
+    ResultRegister.Type = "Number"
     ResultRegister.Value = Arguments.Number
   elseif Opcode == "LoadString" then
     local ResultRegister = Arguments.ResultRegister
+    ResultRegister.Type = "String"
     ResultRegister.Value = Arguments.String
   elseif Opcode == "LoadBoolean" then
     local ResultRegister = Arguments.ResultRegister
+    ResultRegister.Type = "Boolean"
     ResultRegister.Value = Arguments.Boolean
   elseif
     TableHasString({
