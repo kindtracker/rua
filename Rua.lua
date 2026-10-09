@@ -625,19 +625,49 @@ function Rua:Tokenize(State)
         Tokenizer:AddToken(State, "Operator", Operator)
       end
     elseif StringHasLetter(BaseDigits, State.TokenCharacter) then
-      local StartIndex = State.FileIndex - 1
-      local FirstDigit = true
+      local StartIndex = State.FileIndex
 
-      while StringHasLetter(BaseDigits, State.TokenCharacter) do
+      if State.TokenCharacter == "0" then
         Tokenizer:Advance(State)
-        if TableHasString({ "x", "b" }, State.TokenCharacter) and FirstDigit then
+
+        if State.TokenCharacter == "x" or State.TokenCharacter == "X" then
+          Tokenizer:Advance(State)
+
+          while StringHasLetter("0123456789abcdefABCDEF", State.TokenCharacter) do
+            Tokenizer:Advance(State)
+          end
+
+          local Digits = State.FileContent:sub(StartIndex + 2, State.FileIndex - 1)
+          local Number = tonumber(Digits, 16)
+
+          Tokenizer:AddToken(State, "Number", Number)
+        elseif State.TokenCharacter == "b" or State.TokenCharacter == "B" then
+          Tokenizer:Advance(State)
+
+          while State.TokenCharacter == "0" or State.TokenCharacter == "1" do
+            Tokenizer:Advance(State)
+          end
+
+          local Digits = State.FileContent:sub(StartIndex + 2, State.FileIndex - 1)
+          local Number = tonumber(Digits, 2)
+
+          Tokenizer:AddToken(State, "Number", Number)
+        else
+          while StringHasLetter(BaseDigits, State.TokenCharacter) do
+            Tokenizer:Advance(State)
+          end
+
+          local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex - 1))
+          Tokenizer:AddToken(State, "Number", Number)
+        end
+      else
+        while StringHasLetter(BaseDigits, State.TokenCharacter) do
           Tokenizer:Advance(State)
         end
-        FirstDigit = false
-      end
 
-      local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex))
-      Tokenizer:AddToken(State, "Number", Number)
+        local Number = tonumber(State.FileContent:sub(StartIndex, State.FileIndex - 1))
+        Tokenizer:AddToken(State, "Number", Number)
+      end
     elseif State.TokenCharacter == '"' or State.TokenCharacter == "'" then
       local Quote = State.TokenCharacter
       Tokenizer:Advance(State)
@@ -1867,5 +1897,8 @@ Rua.Vm = Vm
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Register-based VM
+
+-- New idea: Compile Ir text to valid Lua then use loadstring to run it
+-- No Vm at all
 
 return Rua
