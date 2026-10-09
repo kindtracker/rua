@@ -429,6 +429,8 @@ function Rua:Run(State, FileName)
     io.write("\n")
   end
 
+  State.ShowFaultLine = false
+
   Rua:GenerateIr(State)
   if State.Stop then
     return
@@ -465,26 +467,34 @@ function Logger:Error(State, ...)
   local WordStart, WordFinish = GetWordStartAndFinish(SourceLine, State.Row)
   local WordLength = WordFinish - WordStart
 
-  local Format = "%s:%d:%d: %sError:%s %s\n"
+  local Format = "%sError:%s %s\n"
   if State.ShowFaultLine then
+    Format = "%s:%d:%d: " .. Format
     Format = Format .. " %s\n%s%s^%s%s\n"
+  else
+    Format = "%s: " .. Format
   end
-  io.write(
-    string.format(
-      Format,
-      State.FileName,
-      State.Line,
-      State.Row,
-      Ansi.Red,
-      Ansi.Reset,
-      string.format(...),
-      HighlightedWord,
-      string.rep(" ", WordStart),
-      Ansi.Red,
-      string.rep("~", WordLength - 1),
-      Ansi.Reset
+
+  if State.ShowFaultLine then
+    io.write(
+      string.format(
+        Format,
+        State.FileName,
+        State.Line,
+        State.Row,
+        Ansi.Red,
+        Ansi.Reset,
+        string.format(...),
+        HighlightedWord,
+        string.rep(" ", WordStart),
+        Ansi.Red,
+        string.rep("~", WordLength - 1),
+        Ansi.Reset
+      )
     )
-  )
+  else
+    io.write(string.format(Format, State.FileName, Ansi.Red, Ansi.Reset, string.format(...)))
+  end
 
   State.Stop = true
 
@@ -1335,7 +1345,6 @@ function IrGenerator:GenerateIr(State, Ast)
 end
 
 function IrGenerator:Initalize(State)
-  State.ShowFaultLine = false
   State.Ir.Registers = {}
   for _ = 1, 256 do
     table.insert(State.Ir.Registers, false)
