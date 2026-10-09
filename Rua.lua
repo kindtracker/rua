@@ -220,171 +220,172 @@ function Rua.new()
 
         InstructionArguments = {
           GetFunction = {
-            [1] = "Register",
-            [2] = "Register",
+            [1] = { Type = "RegisterString", Name = "FunctionName" },
+            [2] = { Type = "Register", Name = "FunctionRegister" },
           },
 
           CallFromRegister = {
-            [1] = "Register",
+            [1] = { Type = "RegisterFunction", Name = "FunctionRegister" },
           },
 
           LoadNumber = {
-            [1] = "Number",
-            [2] = "Register",
+            [1] = { Type = "Number", Name = "Number" },
+            [2] = { Type = "Register", Name = "ResultRegister" },
           },
 
           LoadString = {
-            [1] = "String",
-            [2] = "Register",
+            [1] = { Type = "String", Name = "String" },
+            [2] = { Type = "Register", Name = "ResultString" },
           },
 
           LoadBoolean = {
-            [1] = "Boolean",
-            [2] = "Register",
+            [1] = { Type = "Boolean", Name = "Boolean" },
+            [2] = { Type = "Register", Name = "ResultRegister" },
           },
 
           GetVariable = {
-            [1] = "Register",
-            [2] = "Register",
+            [1] = { Type = "RegisterString", Name = "VariableName" },
+            [2] = { Type = "Register", Name = "VariableRegister" },
           },
 
           VariableAssign = {
-            [1] = "Register",
-            [2] = "Register",
+            [1] = { Type = "RegisterString", Name = "VariableName" },
+            [2] = { Type = "Register", Name = "VariableRegister" },
           },
 
           Push = {
-            [1] = "Register",
+            [1] = { Type = "Register", Name = "FromRegister" },
           },
 
           Pop = {
-            [1] = "Register",
+            [1] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Test = {
-            [1] = "Register",
+            [1] = { Type = "Register", Name = "CheckRegister" },
           },
 
           Jump = {
-            [1] = "Label",
+            [1] = { Type = "Label", Name = "TargetAddress" },
           },
 
+          -- Not a real instruction
           Label = {
-            [1] = "Label",
+            [1] = { Type = "Label", Name = "TargetAddress" },
           },
 
           Add = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Sub = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Mul = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Div = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Mod = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Pow = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           NotEqual = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           Equal = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           EqualOrGreaterThan = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           EqualOrLessThan = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           GreaterThan = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           LessThan = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           NumberAnd = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           NumberOr = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           NumberXor = {
-            [1] = "Register",
-            [2] = "Register",
-            [3] = "Register",
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
           },
 
           LoadFunction = {
-            [1] = "Label",
-            [2] = "Register",
-            [3] = "Number",
+            [1] = { Type = "Label", Name = "FunctionAddress" },
+            [2] = { Type = "Register", Name = "FunctionName" },
+            [3] = { Type = "Number", Name = "FunctionArgumentCount" },
           },
 
           JumpIfFalseTest = {
-            [1] = "Label",
+            [1] = { Type = "Label", Name = "ToAddress" },
           },
 
           JumpIfFalseRegister = {
-            [1] = "Label",
-            [2] = "Register",
+            [1] = { Type = "Label", Name = "ToAddress" },
+            [2] = { Type = "Register", Name = "CheckRegister" },
           },
 
           JumpIfTrueTest = {
-            [1] = "Label",
+            [1] = { Type = "Label", Name = "ToAddress" },
           },
 
           JumpIfTrueRegister = {
-            [1] = "Label",
-            [2] = "Register",
+            [1] = { Type = "Label", Name = "ToAddress" },
+            [2] = { Type = "Register", Name = "CheckRegister" },
           },
 
           Return = {},
@@ -398,6 +399,8 @@ function Rua.new()
       CallStack = {},
       Variables = {},
       Functions = {},
+      Arguments = {},
+      Opcode = "",
       TestFailed = false,
     },
   }
@@ -1555,60 +1558,114 @@ function Vm:GetStringFromRegister(State)
   return Register.Value, RegisterIndex
 end
 
-function Vm:Execute(State)
+function Vm:Decode(State)
   local Instruction = Vm:Read8(State)
   local Opcode
 
-  for Key, Value in pairs(State.Bytecode.Isa.Opcodes) do
+  for Name, Value in pairs(State.Bytecode.Isa.Opcodes) do
     if Value == Instruction then
-      Opcode = Key
+      Opcode = Name
+      break
     end
   end
 
+  if not Opcode then
+    Logger:Error(State, "Invalid opcode")
+    return
+  end
+
+  local Schema = State.Bytecode.Isa.InstructionArguments[Opcode]
+  local Arguments = {}
+
+  for _, Argument in ipairs(Schema) do
+    local Type = Argument.Type
+    local Value
+
+    if Type == "Register" or Type == "RegisterString" or Type == "RegisterFunction" then
+      local RegisterIndex = Vm:Read8(State)
+      Value = State.Vm.Registers[RegisterIndex]
+
+      if Type == "RegisterString" and Value.Type ~= "String" then
+        Logger:Error(State, "Expected register's type as a string")
+        return
+      elseif Type == "RegisterFunction" and Value.Type ~= "Function" then
+        Logger:Error(State, "Expected register's type as a function")
+        return
+      end
+    elseif Type == "Number" then
+      Value = Vm:ReadDouble(State)
+    elseif Type == "String" then
+      Value = Vm:ReadString(State)
+    elseif Type == "Boolean" then
+      Value = Vm:Read8(State) ~= 0
+    elseif Type == "Label" then
+      Value = Vm:Read32(State)
+    else
+      Logger:Error(State, "Unknown argument type: " .. tostring(Type))
+      return
+    end
+
+    Arguments[Argument.Name] = Value
+  end
+
+  State.Vm.Opcode = Opcode
+  State.Vm.Arguments = Arguments
+end
+
+function Vm:Execute(State)
+  local Arguments = State.Vm.Arguments
+  local Opcode = State.Vm.Opcode
+
+  PrintTable(State.Vm.Arguments)
+
   if Opcode == "GetFunction" then
-    local FunctionName = Vm:GetStringFromRegister(State)
-    local FunctionRegister, FunctionRegisterIndex = Vm:ReadAndGetRegister(State)
-    local Function = State.Vm.Functions[FunctionName] or nil
+    local FunctionName = Arguments.FunctionName.Value
+    local FunctionRegister = Arguments.FunctionRegister
+    local Function = State.Vm.Functions[FunctionName]
 
     FunctionRegister.Type = "Function"
-    FunctionRegister.Value = { Name = FunctionName, Function = Function }
+    FunctionRegister.Value = {
+      Name = FunctionName,
+      Function = Function,
+    }
   elseif Opcode == "CallFromRegister" then
-    local FunctionRegister, Index = Vm:ReadAndGetRegister(State)
+    local FunctionRegister = Arguments.FunctionRegister
+    local FunctionInfo = FunctionRegister.Value.Function
 
-    if not FunctionRegister.Value.Function then
+    if not FunctionInfo then
       local Function = _G[FunctionRegister.Value.Name]
+
       if Function then
-        local Arguments = {}
+        local CallArguments = {}
 
         while #State.Vm.Stack > 0 do
-          table.insert(Arguments, 1, table.remove(State.Vm.Stack).Value)
+          table.insert(CallArguments, 1, table.remove(State.Vm.Stack).Value)
         end
 
-        Function(table.unpack(Arguments))
+        Function(table.unpack(CallArguments))
       end
     else
       table.insert(State.Vm.CallStack, State.Vm.Pc)
-      State.Vm.Pc = FunctionRegister.Value.Function.Address
+      State.Vm.Pc = FunctionInfo.Address
     end
   elseif Opcode == "LoadFunction" then
-    local FunctionAddress = Vm:Read32(State)
-    local FunctionName = Vm:GetStringFromRegister(State)
-    local FunctionArgumentCount = Vm:ReadDouble(State)
+    local FunctionAddress = Arguments.FunctionAddress
+    local FunctionName = Arguments.FunctionName.Value
+    local FunctionArgumentCount = Arguments.FunctionArgumentCount
 
     State.Vm.Functions[FunctionName] = {
       Address = FunctionAddress,
       ArgumentCount = FunctionArgumentCount,
     }
   elseif Opcode == "LoadNumber" then
-    local Number = Vm:ReadDouble(State)
-    local ResultRegister = Vm:ReadAndGetRegister(State)
-
-    ResultRegister.Value = Number
+    local ResultRegister = Arguments.ResultRegister
+    ResultRegister.Value = Arguments.Number
   elseif Opcode == "LoadString" then
-    local String = Vm:ReadString(State)
-    local ResultRegister = Vm:ReadAndGetRegister(State)
-
-    ResultRegister.Value = String
+    local ResultRegister = Arguments.ResultString
+    ResultRegister.Value = Arguments.String
+  elseif Opcode == "LoadBoolean" then
+    local ResultRegister = Arguments.ResultRegister
+    ResultRegister.Value = Arguments.Boolean
   elseif
     TableHasString({
       "Add",
@@ -1628,80 +1685,72 @@ function Vm:Execute(State)
       "NumberXor",
     }, Opcode)
   then
-    local LeftRegister = Vm:ReadAndGetRegister(State)
-    local RightRegister = Vm:ReadAndGetRegister(State)
-    local ResultRegister = Vm:ReadAndGetRegister(State)
+    local Left = Arguments.LeftRegister.Value
+    local Right = Arguments.RightRegister.Value
+    local ResultRegister = Arguments.ResultRegister
 
     if Opcode == "Add" then
-      ResultRegister.Value = LeftRegister.Value + RightRegister.Value
+      ResultRegister.Value = Left + Right
     elseif Opcode == "Sub" then
-      ResultRegister.Value = LeftRegister.Value - RightRegister.Value
+      ResultRegister.Value = Left - Right
     elseif Opcode == "Mul" then
-      ResultRegister.Value = LeftRegister.Value * RightRegister.Value
+      ResultRegister.Value = Left * Right
     elseif Opcode == "Div" then
-      ResultRegister.Value = LeftRegister.Value / RightRegister.Value
+      ResultRegister.Value = Left / Right
     elseif Opcode == "Mod" then
-      ResultRegister.Value = LeftRegister.Value % RightRegister.Value
+      ResultRegister.Value = Left % Right
     elseif Opcode == "Pow" then
-      ResultRegister.Value = LeftRegister.Value ^ RightRegister.Value
+      ResultRegister.Value = Left ^ Right
     elseif Opcode == "NotEqual" then
-      ResultRegister.Value = LeftRegister.Value ~= RightRegister.Value
+      ResultRegister.Value = Left ~= Right
     elseif Opcode == "Equal" then
-      ResultRegister.Value = LeftRegister.Value == RightRegister.Value
+      ResultRegister.Value = Left == Right
     elseif Opcode == "EqualOrGreaterThan" then
-      ResultRegister.Value = LeftRegister.Value >= RightRegister.Value
+      ResultRegister.Value = Left >= Right
     elseif Opcode == "EqualOrLessThan" then
-      ResultRegister.Value = LeftRegister.Value <= RightRegister.Value
+      ResultRegister.Value = Left <= Right
     elseif Opcode == "GreaterThan" then
-      ResultRegister.Value = LeftRegister.Value > RightRegister.Value
+      ResultRegister.Value = Left > Right
     elseif Opcode == "LessThan" then
-      ResultRegister.Value = LeftRegister.Value < RightRegister.Value
+      ResultRegister.Value = Left < Right
     elseif Opcode == "NumberAnd" then
-      ResultRegister.Value = LeftRegister.Value & RightRegister.Value
+      ResultRegister.Value = Left & Right
     elseif Opcode == "NumberOr" then
-      ResultRegister.Value = LeftRegister.Value | RightRegister.Value
+      ResultRegister.Value = Left | Right
     elseif Opcode == "NumberXor" then
-      ResultRegister.Value = LeftRegister.Value ~ RightRegister.Value
+      ResultRegister.Value = Left ~ Right
     end
   elseif Opcode == "JumpIfFalseTest" then
-    local Address = Vm:Read32(State)
-
     if State.Vm.TestFailed then
-      State.Vm.Pc = Address
+      State.Vm.Pc = Arguments.ToAddress
     end
   elseif Opcode == "JumpIfTrueTest" then
-    local Address = Vm:Read32(State)
-
     if not State.Vm.TestFailed then
-      State.Vm.Pc = Address
+      State.Vm.Pc = Arguments.ToAddress
     end
   elseif Opcode == "JumpIfFalseRegister" then
-    local Address = Vm:Read32(State)
-    local Register = Vm:ReadAndGetRegister(State)
+    local Value = Arguments.CheckRegister.Value
 
-    if Register.Value == nil or Register.Value == false or Register.Value == 0 then
-      State.Vm.Pc = Address
+    if Value == nil or Value == false or Value == 0 then
+      State.Vm.Pc = Arguments.ToAddress
     end
   elseif Opcode == "JumpIfTrueRegister" then
-    local Address = Vm:Read32(State)
-    local Register = Vm:ReadAndGetRegister(State)
+    local Value = Arguments.CheckRegister.Value
 
-    if Register.Value ~= nil and Register.Value ~= false and Register.Value ~= 0 then
-      State.Vm.Pc = Address
+    if Value ~= nil and Value ~= false and Value ~= 0 then
+      State.Vm.Pc = Arguments.ToAddress
     end
   elseif Opcode == "Jump" then
-    local Address = Vm:Read32(State)
-
-    State.Vm.Pc = Address
+    State.Vm.Pc = Arguments.TargetAddress
   elseif Opcode == "Push" then
-    local Register = Vm:ReadAndGetRegister(State)
+    local Register = Arguments.FromRegister
 
     table.insert(State.Vm.Stack, {
       Type = Register.Type,
       Value = Register.Value,
     })
   elseif Opcode == "Pop" then
-    local Register = Vm:ReadAndGetRegister(State)
+    local Register = Arguments.ResultRegister
     local Top = table.remove(State.Vm.Stack)
 
     if Top == nil then
@@ -1712,27 +1761,37 @@ function Vm:Execute(State)
       Register.Value = Top.Value
     end
   elseif Opcode == "Test" then
-    local Register = Vm:ReadAndGetRegister(State)
+    local CheckRegister = Arguments.CheckRegister
 
-    State.Vm.SkipInstruction = true
+    State.Vm.TestFailed = CheckRegister.Value == nil or CheckRegister.Value == false or CheckRegister.Value == 0
   elseif Opcode == "VariableAssign" then
-    local VariableName = Vm:GetStringFromRegister(State)
-    local VariableRegister = Vm:ReadAndGetRegister(State)
+    local VariableName = Arguments.VariableName.Value
+    local VariableRegister = Arguments.VariableRegister
 
-    State.Vm.Variables[VariableName] = {}
-    State.Vm.Variables[VariableName].Type = VariableRegister.Type
-    State.Vm.Variables[VariableName].Value = VariableRegister.Value
+    State.Vm.Variables[VariableName] = {
+      Type = VariableRegister.Type,
+      Value = VariableRegister.Value,
+    }
   elseif Opcode == "GetVariable" then
-    local VariableName = Vm:GetStringFromRegister(State)
-    local VariableRegister = Vm:ReadAndGetRegister(State)
-
+    local VariableName = Arguments.VariableName.Value
+    local VariableRegister = Arguments.VariableRegister
     local Value = State.Vm.Variables[VariableName]
 
-    VariableRegister.Type = Value.Type
-    VariableRegister.Value = Value.Value
+    if Value then
+      VariableRegister.Type = Value.Type
+      VariableRegister.Value = Value.Value
+    else
+      VariableRegister.Type = "Nil"
+      VariableRegister.Value = nil
+    end
   elseif Opcode == "Return" then
     local ReturnPc = table.remove(State.Vm.CallStack)
-    State.Vm.Pc = ReturnPc
+
+    if ReturnPc then
+      State.Vm.Pc = ReturnPc
+    else
+      State.Vm.Pc = #State.Bytecode.Program + 1
+    end
   end
 end
 
@@ -1750,8 +1809,15 @@ function Vm:Run(State)
   local Result
 
   while State.Vm.Pc <= #State.Bytecode.Program do
+    Vm:Decode(State)
+    if State.Stop then
+      return
+    end
+
     Result = Vm:Execute(State)
-    State.Vm.SkipInstruction = false
+    if State.Stop then
+      return
+    end
   end
 
   return Result
@@ -1772,5 +1838,7 @@ Rua.Vm = Vm
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Register-based VM
+
+-- TODO: Better errors in Vm
 
 return Rua
