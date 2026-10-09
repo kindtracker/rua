@@ -114,7 +114,7 @@ function VmDebugger:PrintCallStack(State)
 end
 
 function VmDebugger:PrintInstruction(State)
-  io.write(string.format("%04d: %s", State.Vm.InstructionPc, State.Vm.Opcode or "<Unknown>"))
+  io.write(string.format("%04d: %s\n", State.Vm.InstructionPc, State.Vm.Opcode or "<Unknown>"))
 
   for Name, Value in pairs(State.Vm.Arguments or {}) do
     if type(Value) == "table" and Value.Type then

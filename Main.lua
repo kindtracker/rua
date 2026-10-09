@@ -9,6 +9,7 @@ for ArgumentIndex, Argument in ipairs(arg) do
     Rua.DevMode = true
   elseif Argument == "+VmDebugger" then
     VmDebugger:Initialize(State, Rua)
+    VmDebugger:AddBreakpoint(State, 1)
   else
     FileName = Argument
   end
@@ -17,7 +18,5 @@ end
 if FileName == nil then
   return
 end
-
-VmDebugger:AddBreakpoint(State, 1)
 
 Rua:Run(State, FileName)

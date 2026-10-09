@@ -1492,7 +1492,7 @@ function BytecodeGenerator:Generate(State, Ir)
   for Index, ArgumentValue in ipairs(Ir.Arguments) do
     local ArgumentType = Schema[Index].Type
 
-    if ArgumentType == "Register" then
+    if TableHasString({ "Register", "RegisterString", "RegisterFunction" }, ArgumentType) then
       BytecodeGenerator:Write8(State, ArgumentValue)
     elseif ArgumentType == "Number" then
       BytecodeGenerator:WriteDouble(State, ArgumentValue)
