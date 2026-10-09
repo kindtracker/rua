@@ -3,6 +3,5 @@
 compile_commands.json
 compile_commands.tmp
 Test.lua
-Dev.rua
-Dev.rua.lua
+Dev.lua
 build
