@@ -1473,6 +1473,9 @@ function BytecodeGenerator:GetInstructionSize(State, Ir)
       Size = Size + 1
     elseif ArgumentType == "Label" then
       Size = Size + 4
+    else
+      Logger:Error(State, "Unknown argument type: " .. tostring(Type))
+      return
     end
   end
 
@@ -1589,7 +1592,7 @@ function Vm:Decode(State)
   end
 
   if not Opcode then
-    Logger:Error(State, "Invalid opcode")
+    Logger:Error(State, "Invalid opcode %d at bytecode position %d", Instruction, State.Vm.Pc - 1)
     return
   end
 
@@ -1816,6 +1819,8 @@ function Vm:Execute(State)
     else
       State.Vm.Pc = #State.Bytecode.Program + 1
     end
+  else
+    Logger:Error(State, "Unhandled opcode %q", Opcode)
   end
 end
 
@@ -1862,7 +1867,5 @@ Rua.Vm = Vm
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
 -- Ir generator -> Ir -> Bytecode generator -> Bytecode ->
 -- Register-based VM
-
--- TODO: Better errors in Vm
 
 return Rua
