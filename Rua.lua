@@ -176,9 +176,19 @@ function Rua.new()
     Line = 1,
     Row = 1,
     Stop = false,
-    Ir = { Program = {}, LabelCount = 0, Registers = {} },
+    Ir = {
+      Program = {},
+      LabelCount = 0,
+      Registers = {},
+    },
     ShowFaultLine = true,
     Lua = { Program = "" },
+    Runtime = {
+      Registers = {},
+      Variables = {},
+      Functions = {},
+      Stack = {},
+    },
   }
 end
 
@@ -1225,56 +1235,77 @@ end
 
 local RuaRuntime = {}
 
-function RuaRuntime:Initalize()
-  RuaRuntime.Registers = {}
-  RuaRuntime.Variables = {}
-  RuaRuntime.Functions = {}
-  RuaRuntime.Stack = {}
+function RuaRuntime:Initialize(State)
+  State.Runtime.Registers = {}
+  State.Runtime.Variables = {}
+  State.Runtime.Functions = {}
+  State.Runtime.Stack = {}
 end
 
-function RuaRuntime:GetRegister(RegisterIndex)
-  local Register = RuaRuntime.Registers[RegisterIndex]
+function RuaRuntime:GetRegister(State, RegisterIndex)
+  local Register = State.Runtime.Registers[RegisterIndex]
 
   if Register == nil then
-    RuaRuntime.Registers[RegisterIndex] = { Type = "Nil" }
-    return { Type = "Nil" }
+    Register = { Type = "Nil" }
+    State.Runtime.Registers[RegisterIndex] = Register
   end
 
   return Register
 end
 
-function RuaRuntime:GetValueFromRegister(RegisterIndex)
-  local Register = RuaRuntime:GetRegister(RegisterIndex)
-  return Register.Value
+function RuaRuntime:GetValueFromRegister(State, RegisterIndex)
+  return RuaRuntime:GetRegister(State, RegisterIndex).Value
 end
 
-function RuaRuntime:SetRegister(RegisterIndex, Register)
-  RuaRuntime.Registers[RegisterIndex] = Register
+function RuaRuntime:SetRegister(State, RegisterIndex, Register)
+  State.Runtime.Registers[RegisterIndex] = Register
 end
 
-function RuaRuntime.LoadString(String, Register)
-  RuaRuntime.Registers[Register] = {
+function RuaRuntime:LoadString(State, String, RegisterIndex)
+  State.Runtime.Registers[RegisterIndex] = {
     Type = "String",
     Value = String,
   }
 end
 
-function RuaRuntime.Push(RegisterIndex)
-  local Register = RuaRuntime.Registers[RegisterIndex]
-  table.insert(RuaRuntime.Stack, { Type = Register.Type, Value = Register.Value })
+function RuaRuntime:Push(State, RegisterIndex)
+  local Register = RuaRuntime:GetRegister(State, RegisterIndex)
+
+  table.insert(State.Stack, {
+    Type = Register.Type,
+    Value = Register.Value,
+  })
+end
+
+function RuaRuntime:Pop(State, RegisterIndex)
+  local Register = RuaRuntime:GetRegister(State, RegisterIndex)
+  local Value = table.remove(State.Runtime.Stack)
+
+  Register.Type = Value.Type
+  Register.Value = Value.Value
 end
 
 function RuaRuntime.GetFunction(FunctionNameRegister, FunctionRegister)
   local FunctionName = RuaRuntime:GetValueFromRegister(FunctionNameRegister)
   local Function = RuaRuntime.Functions[FunctionName]
 
-  RuaRuntime.Registers[FunctionRegister] = {
+  RuaRuntime.Runtime.Registers[FunctionRegister] = {
     Type = "Function",
-    Value = {
-      Name = FunctionName,
-      Address = Function,
-    },
+    Value = { Name = FunctionName, Function = Function },
   }
+end
+
+function RuaRuntime.CallFromRegister(FunctionRegister)
+  local Function = RuaRuntime:GetValueFromRegister(FunctionRegister)
+
+  local Arguments = RuaRuntime.Stack
+
+  if Function.Function then
+    Function.Function(table.unpack(Arguments))
+  else
+    Function.Function = _G[Function.Name]
+    Function.Function(table.unpack(Arguments))
+  end
 end
 
 Rua.Logger = Logger
