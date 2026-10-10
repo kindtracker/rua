@@ -394,6 +394,27 @@ function Rua.new()
 
           Return = {},
         },
+
+        NumericOpcodes = {
+          Add = true,
+          Sub = true,
+          Mul = true,
+          Div = true,
+          Mod = true,
+          Pow = true,
+          NumberAnd = true,
+          NumberOr = true,
+          NumberXor = true,
+        },
+
+        ComparisonOpcodes = {
+          NotEqual = true,
+          Equal = true,
+          EqualOrGreaterThan = true,
+          EqualOrLessThan = true,
+          GreaterThan = true,
+          LessThan = true,
+        },
       },
     },
     Vm = {
@@ -1601,10 +1622,6 @@ function Vm:Decode(State)
         Logger:Error(State, "Expected register's type as a function")
         return
       end
-
-      if TableHasString({ "String", "Function" }, Type) then
-        Value = Value.Value
-      end
     elseif Type == "Number" then
       Value = Vm:ReadDouble(State)
     elseif Type == "String" then
@@ -1733,6 +1750,12 @@ function Vm:Execute(State)
       ResultRegister.Value = Left | Right
     elseif Opcode == "NumberXor" then
       ResultRegister.Value = Left ~ Right
+    end
+
+    if State.Bytecode.Isa.NumericOpcodes[Opcode] then
+      ResultRegister.Type = "Number"
+    elseif State.Bytecode.Isa.ComparisonOpcodes[Opcode] then
+      ResultRegister.Type = "Boolean"
     end
   elseif Opcode == "JumpIfFalseTest" then
     if State.Vm.TestFailed then
