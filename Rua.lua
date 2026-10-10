@@ -182,12 +182,230 @@ function Rua.new()
       Registers = {},
     },
     ShowFaultLine = true,
-    Lua = { Program = "" },
-    Runtime = {
+    Bytecode = {
+      Program = "",
+      ProgramTable = {},
+      Lables = {},
+      Isa = {
+        Opcodes = {
+          GetFunction = 1,
+          CallFromRegister = 2,
+          LoadNumber = 3,
+          LoadString = 4,
+          LoadBoolean = 5,
+          GetVariable = 6,
+          VariableAssign = 7,
+          JumpIfFalseTest = 8,
+          Push = 9,
+          Pop = 10,
+          Test = 11,
+          Jump = 12,
+          Label = 13,
+          Add = 14,
+          Sub = 15,
+          Mul = 16,
+          Div = 17,
+          Mod = 18,
+          Pow = 19,
+          NotEqual = 20,
+          Equal = 21,
+          EqualOrGreaterThan = 22,
+          EqualOrLessThan = 23,
+          GreaterThan = 24,
+          LessThan = 25,
+          NumberAnd = 26,
+          NumberOr = 27,
+          NumberXor = 28,
+          LoadFunction = 29,
+          JumpIfFalseRegister = 30,
+          JumpIfTrueTest = 31,
+          JumpIfTrueRegister = 31,
+          Return = 32,
+        },
+
+        InstructionArguments = {
+          GetFunction = {
+            [1] = { Type = "RegisterString", Name = "FunctionName" },
+            [2] = { Type = "Register", Name = "FunctionRegister" },
+          },
+
+          CallFromRegister = {
+            [1] = { Type = "RegisterFunction", Name = "FunctionRegister" },
+          },
+
+          LoadNumber = {
+            [1] = { Type = "Number", Name = "Number" },
+            [2] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          LoadString = {
+            [1] = { Type = "String", Name = "String" },
+            [2] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          LoadBoolean = {
+            [1] = { Type = "Boolean", Name = "Boolean" },
+            [2] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          GetVariable = {
+            [1] = { Type = "RegisterString", Name = "VariableName" },
+            [2] = { Type = "Register", Name = "VariableRegister" },
+          },
+
+          VariableAssign = {
+            [1] = { Type = "RegisterString", Name = "VariableName" },
+            [2] = { Type = "Register", Name = "VariableRegister" },
+          },
+
+          Push = {
+            [1] = { Type = "Register", Name = "FromRegister" },
+          },
+
+          Pop = {
+            [1] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Test = {
+            [1] = { Type = "Register", Name = "CheckRegister" },
+          },
+
+          Jump = {
+            [1] = { Type = "Label", Name = "TargetAddress" },
+          },
+
+          Label = {
+            [1] = { Type = "Label", Name = "TargetAddress" },
+          },
+
+          Add = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Sub = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Mul = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Div = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Mod = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Pow = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          NotEqual = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          Equal = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          EqualOrGreaterThan = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          EqualOrLessThan = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          GreaterThan = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          LessThan = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          NumberAnd = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          NumberOr = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          NumberXor = {
+            [1] = { Type = "Register", Name = "LeftRegister" },
+            [2] = { Type = "Register", Name = "RightRegister" },
+            [3] = { Type = "Register", Name = "ResultRegister" },
+          },
+
+          LoadFunction = {
+            [1] = { Type = "Label", Name = "FunctionAddress" },
+            [2] = { Type = "Register", Name = "FunctionName" },
+            [3] = { Type = "Number", Name = "FunctionArgumentCount" },
+          },
+
+          JumpIfFalseTest = {
+            [1] = { Type = "Label", Name = "ToAddress" },
+          },
+
+          JumpIfFalseRegister = {
+            [1] = { Type = "Label", Name = "ToAddress" },
+            [2] = { Type = "Register", Name = "CheckRegister" },
+          },
+
+          JumpIfTrueTest = {
+            [1] = { Type = "Label", Name = "ToAddress" },
+          },
+
+          JumpIfTrueRegister = {
+            [1] = { Type = "Label", Name = "ToAddress" },
+            [2] = { Type = "Register", Name = "CheckRegister" },
+          },
+
+          Return = {},
+        },
+      },
+    },
+    Vm = {
+      Pc = 1,
       Registers = {},
+      Stack = {},
+      CallStack = {},
       Variables = {},
       Functions = {},
-      Stack = {},
+      Arguments = {},
+      Opcode = "",
+      TestFailed = false,
     },
   }
 end
@@ -218,7 +436,6 @@ function Rua:Run(State, FileName)
 
   State.ShowFaultLine = false
 
-  --[[
   Rua:GenerateIr(State)
   if State.Stop then
     return
@@ -227,19 +444,18 @@ function Rua:Run(State, FileName)
   if Rua.DevMode then
     PrintTable(State.Ir.Program)
     io.write("\n")
-  end]]
+  end
 
-  --[[
-  Rua:GenerateLua(State)
+  Rua:GenerateBytecode(State)
   if State.Stop then
     return
   end
 
   if Rua.DevMode then
-    io.open("Dev.lua", "w"):write(State.Lua.Program)
+    io.open("Dev.rua", "wb"):write(State.Bytecode.Program)
   end
 
-  Rua:ExecuteGeneratedLua(State)]]
+  Rua:Execute(State)
 end
 
 local Logger = {}
@@ -850,7 +1066,6 @@ function Rua:Parse(State)
   end
 end
 
---[[
 local IrGenerator = {}
 
 function IrGenerator:NewIr(State)
@@ -1179,176 +1394,6 @@ function Rua:GenerateIr(State)
   for _, Ast in ipairs(State.Ast) do
     IrGenerator:GenerateIr(State, Ast)
   end
-end
-
-local LuaGenerator = {}
-
-function LuaGenerator:Initalize(State)
-  State.Lua.Program = ""
-end
-
-function LuaGenerator:IrToLua(Ir, Level)
-  local Tab = ("  "):rep(Level)
-
-  if Ir.Type == "Label" then
-    return string.format("function Label%d()\n", Ir.Arguments[1])
-  elseif Ir.Type == "Jump" then
-    return string.format("%sRuaRuntime:Jump(Label%s)\n", Tab, Ir.Arguments[1])
-  else
-    local Arguments = {}
-
-    for _, Argument in ipairs(Ir.Arguments) do
-      table.insert(Arguments, string.format("%q", Argument))
-    end
-
-    return string.format("%sRuaRuntime:%s(%s)\n", Tab, Ir.Type, table.concat(Arguments, ", "))
-  end
-end
-
-function LuaGenerator:IrProgramToLua(State)
-  local Lua = ""
-  local Level = 1
-  local HasLabel = false
-
-  Lua = Lua .. "function Main()\n"
-
-  for _, Ir in ipairs(State.Ir.Program) do
-    if Ir.Type == "Label" then
-      HasLabel = true
-      Lua = Lua .. "end\n\n"
-      Lua = Lua .. string.format("function Label%d()\n", Ir.Arguments[1])
-    else
-      Lua = Lua .. LuaGenerator:IrToLua(Ir, Level)
-    end
-  end
-
-  if HasLabel then
-    Lua = Lua .. "end\n"
-  end
-
-  Lua = Lua .. "\nMain()"
-
-  return Lua
-end
-
-function LuaGenerator:Generate(State)
-  State.Lua.Program = LuaGenerator:IrProgramToLua(State)
-end
-
-function Rua:GenerateLua(State)
-  LuaGenerator:Initalize(State)
-  LuaGenerator:Generate(State)
-end
-
-local RuaRuntime = {}
-
-function RuaRuntime:Initialize(State)
-  State.Registers = {}
-  State.Variables = {}
-  State.Functions = {}
-  State.Stack = {}
-end
-
-function RuaRuntime:GetRegister(State, RegisterIndex)
-  local Register = State.Registers[RegisterIndex]
-
-  if Register == nil then
-    Register = { Type = "Nil" }
-    State.Registers[RegisterIndex] = Register
-  end
-
-  return Register
-end
-
-function RuaRuntime:GetValueFromRegister(State, RegisterIndex)
-  return RuaRuntime:GetRegister(State, RegisterIndex).Value
-end
-
-function RuaRuntime:SetRegister(State, RegisterIndex, Register)
-  State.Registers[RegisterIndex] = Register
-end
-
-function RuaRuntime:LoadString(String, RegisterIndex)
-  local State = self.State
-
-  State.Registers[RegisterIndex] = {
-    Type = "String",
-    Value = String,
-  }
-end
-
-function RuaRuntime:Push(RegisterIndex)
-  local State = self.State
-
-  local Register = RuaRuntime:GetRegister(State, RegisterIndex)
-
-  table.insert(State.Stack, {
-    Type = Register.Type,
-    Value = Register.Value,
-  })
-end
-
-function RuaRuntime:Pop(RegisterIndex)
-  local State = self.State
-
-  local Register = RuaRuntime:GetRegister(State, RegisterIndex)
-  local Value = table.remove(State.Stack)
-
-  Register.Type = Value.Type
-  Register.Value = Value.Value
-end
-
-function RuaRuntime:GetFunction(FunctionNameRegister, FunctionRegister)
-  local State = self.State
-
-  local FunctionName = RuaRuntime:GetValueFromRegister(State, FunctionNameRegister)
-  local Function = State.Functions[FunctionName]
-
-  State.Registers[FunctionRegister] = {
-    Type = "Function",
-    Value = { Name = FunctionName, Function = Function },
-  }
-end
-
-function RuaRuntime:CallFromRegister(FunctionRegister)
-  local State = self.State
-
-  local Function = RuaRuntime:GetValueFromRegister(State, FunctionRegister)
-
-  local Arguments = State.Stack
-  for Index, Argument in ipairs(Arguments) do
-    Arguments[Index] = Argument.Value
-  end
-
-  if Function.Function then
-    Function.Function(table.unpack(Arguments))
-  else
-    Function.Function = _G[Function.Name]
-    Function.Function(table.unpack(Arguments))
-  end
-end
-
-function RuaRuntime:LoadFunction() end
-
-local LuaExecutor = {}
-
-function LuaExecutor:Execute(State)
-  local Environment = {
-    RuaRuntime = RuaRuntime,
-  }
-  local Chunk, Error = load(State.Lua.Program, "RuaGenerated", "t", Environment)
-  if not Chunk then
-    Logger:Error(State, "Failed to compile generated Lua: %s", Error)
-    return
-  end
-
-  Environment.RuaRuntime.State = State.Runtime
-
-  return Chunk()
-end
-
-function Rua:ExecuteGeneratedLua(State)
-  LuaExecutor:Execute(State)
 end
 
 local BytecodeGenerator = {}
@@ -1798,30 +1843,15 @@ function Rua:Execute(State)
   Vm:Initalize(State)
   return Vm:Run(State)
 end
-]]
 
 Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
-
---[[
-Rua.LuaGenerator = LuaGenerator
-Rua.RuaRunTime = RuaRuntime
-Rua.LuaExecutor = LuaExecutor
-
 Rua.IrGenerator = IrGenerator
-Rua.OldLuaGenerator = OldLuaGenerator (Input is Ir)
-Rua.RuaRunTime = RuaRuntime
-Rua.LuaExecutor = LuaExecutor
-
 Rua.Vm = Vm
-Rua.BytecodeGenerator = BytecodeGenerator
---]]
 
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
--- Ir generator -> Ir -> LuaGenerator -> Lua
-
--- New idea: Compile Ir text to valid Lua then use loadstring to run it
--- No Vm at all
+-- Ir generator -> Ir -> BytecodeGenerator -> Bytecode ->
+-- Register-based Vm
 
 return Rua
