@@ -412,6 +412,7 @@ function Rua.new()
         },
       },
     },
+
     Vm = {
       Pc = 1,
       Registers = {},
@@ -423,6 +424,8 @@ function Rua.new()
       Opcode = "",
       TestFailed = false,
     },
+
+    Lua = { Program = "" },
   }
 end
 
@@ -460,6 +463,15 @@ function Rua:Run(State, FileName)
   if Rua.DevMode then
     PrintTable(State.Ir.Program)
     io.write("\n")
+  end
+
+  Rua:GenerateLua(State)
+  if State.Stop then
+    return
+  end
+
+  if Rua.DevMode then
+    io.open("Dev.lua", "w"):write(State.Lua.Program)
   end
 
   Rua:GenerateBytecode(State)
@@ -1137,6 +1149,31 @@ function IrGenerator:MarkNotUsed(State, Register)
   State.Ir.Registers[Register] = false
 end
 
+function IrGenerator:EnterScope(State)
+  table.insert(State.Ir.Scopes, {})
+end
+
+function IrGenerator:LeaveScope(State)
+  table.remove(State.Ir.Scopes)
+end
+
+function IrGenerator:DeclareLocal(State, Name, Register)
+  local Scope = State.Ir.Scopes[#State.Ir.Scopes]
+  Scope[Name] = Register
+end
+
+function IrGenerator:ResolveLocal(State, Name)
+  for Index = #State.Ir.Scopes, 1, -1 do
+    local Register = State.Ir.Scopes[Index][Name]
+
+    if Register ~= nil then
+      return Register
+    end
+  end
+
+  return nil
+end
+
 function IrGenerator:GenerateIr(State, Ast)
   State.CurrentIr = { Arguments = {} }
 
@@ -1206,9 +1243,10 @@ function IrGenerator:GenerateIr(State, Ast)
     }
     IrGenerator:NewIr(State)
 
+    IrGenerator:EnterScope(State)
+
     for Index = #Ast.Arguments, 1, -1 do
       local Argument = Ast.Arguments[Index]
-      local ArgumentNameRegister = IrGenerator:ConvertStringToIr(State, Argument.Value)
       local ArgumentRegister = IrGenerator:AllocateRegister(State)
 
       State.CurrentIr.Type = "Pop"
@@ -1217,23 +1255,16 @@ function IrGenerator:GenerateIr(State, Ast)
       }
       IrGenerator:NewIr(State)
 
-      State.CurrentIr.Type = "VariableAssign"
-      State.CurrentIr.Arguments = {
-        [1] = ArgumentNameRegister,
-        [2] = ArgumentRegister,
-      }
-      IrGenerator:MarkNotUsed(State, ArgumentNameRegister)
-      IrGenerator:MarkNotUsed(State, ArgumentRegister)
-      IrGenerator:NewIr(State)
+      IrGenerator:DeclareLocal(State, Argument.Value, ArgumentRegister)
     end
 
-    for _, ChildAst in ipairs(Ast.Body) do
-      IrGenerator:GenerateIr(State, ChildAst)
-    end
+    IrGenerator:GenerateBlock(State, Ast.Body)
 
     State.CurrentIr.Type = "Return"
     State.CurrentIr.Arguments = {}
     IrGenerator:NewIr(State)
+
+    IrGenerator:LeaveScope(State)
 
     State.CurrentIr.Type = "Label"
     State.CurrentIr.Arguments = {
@@ -1261,6 +1292,12 @@ function IrGenerator:GenerateIr(State, Ast)
 
     return ResultRegister
   elseif Ast.Type == "Ident" then
+    local LocalRegister = IrGenerator:ResolveLocal(State, Ast.Value)
+
+    if LocalRegister then
+      return LocalRegister
+    end
+
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Value)
     local ResultRegister = IrGenerator:AllocateRegister(State)
 
@@ -1285,18 +1322,41 @@ function IrGenerator:GenerateIr(State, Ast)
 
     return ResultRegister
   elseif Ast.Type == "VariableAssign" then
+    if Ast.Local then
+      local LocalRegister = IrGenerator:GenerateIr(State, Ast.Value)
+      IrGenerator:DeclareLocal(State, Ast.Name, LocalRegister)
+      return LocalRegister
+    end
+
+    local LocalRegister = IrGenerator:ResolveLocal(State, Ast.Name)
+    local ValueRegister = IrGenerator:GenerateIr(State, Ast.Value)
+
+    if LocalRegister ~= nil then
+      for Index = #State.Ir.Scopes, 1, -1 do
+        local Scope = State.Ir.Scopes[Index]
+
+        if Scope[Ast.Name] ~= nil then
+          Scope[Ast.Name] = ValueRegister
+          break
+        end
+      end
+
+      return ValueRegister
+    end
+
     local VariableNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
-    local VariableRegister = IrGenerator:GenerateIr(State, Ast.Value)
 
     State.CurrentIr.Type = "VariableAssign"
     State.CurrentIr.Arguments = {
       [1] = VariableNameRegister,
-      [2] = VariableRegister,
+      [2] = ValueRegister,
     }
 
     IrGenerator:MarkNotUsed(State, VariableNameRegister)
-    IrGenerator:MarkNotUsed(State, VariableRegister)
+    IrGenerator:MarkNotUsed(State, ValueRegister)
     IrGenerator:NewIr(State)
+
+    return ValueRegister
   elseif Ast.Type == "Return" then
     local ReturnRegister = IrGenerator:GenerateIr(State, Ast.Value)
 
@@ -1305,6 +1365,10 @@ function IrGenerator:GenerateIr(State, Ast)
       [1] = ReturnRegister,
     }
     IrGenerator:MarkNotUsed(State, ReturnRegister)
+    IrGenerator:NewIr(State)
+
+    State.CurrentIr.Type = "Return"
+    State.CurrentIr.Arguments = {}
     IrGenerator:NewIr(State)
   elseif Ast.Type == "If" then
     local ElseLabel = IrGenerator:NewLabel(State)
@@ -1402,6 +1466,8 @@ function IrGenerator:Initalize(State)
   for _ = 1, 256 do
     table.insert(State.Ir.Registers, false)
   end
+
+  State.Ir.Scopes = { {} }
 end
 
 function Rua:GenerateIr(State)
@@ -1410,6 +1476,65 @@ function Rua:GenerateIr(State)
   for _, Ast in ipairs(State.Ast) do
     IrGenerator:GenerateIr(State, Ast)
   end
+end
+
+local LuaGenerator = {}
+
+function LuaGenerator:Initalize(State)
+  State.Lua.Program = ""
+end
+
+function LuaGenerator:IrToLua(Ir, Level)
+  local Tab = ("  "):rep(Level)
+
+  if Ir.Type == "Label" then
+    return string.format("function Label%d()\n", Ir.Arguments[1])
+  elseif Ir.Type == "Jump" then
+    return string.format("%sRuaRuntime:Jump(Label%s)\n", Tab, Ir.Arguments[1])
+  else
+    local Arguments = {}
+
+    for _, Argument in ipairs(Ir.Arguments) do
+      table.insert(Arguments, string.format("%q", Argument))
+    end
+
+    return string.format("%sRuaRuntime:%s(%s)\n", Tab, Ir.Type, table.concat(Arguments, ", "))
+  end
+end
+
+function LuaGenerator:IrProgramToLua(State)
+  local Lua = ""
+  local Level = 1
+  local HasLabel = false
+
+  Lua = Lua .. "function Main()\n"
+
+  for _, Ir in ipairs(State.Ir.Program) do
+    if Ir.Type == "Label" then
+      HasLabel = true
+      Lua = Lua .. "end\n\n"
+      Lua = Lua .. string.format("function Label%d()\n", Ir.Arguments[1])
+    else
+      Lua = Lua .. LuaGenerator:IrToLua(Ir, Level)
+    end
+  end
+
+  if HasLabel then
+    Lua = Lua .. "end\n"
+  end
+
+  Lua = Lua .. "\nMain()"
+
+  return Lua
+end
+
+function LuaGenerator:Generate(State)
+  State.Lua.Program = LuaGenerator:IrProgramToLua(State)
+end
+
+function Rua:GenerateLua(State)
+  LuaGenerator:Initalize(State)
+  LuaGenerator:Generate(State)
 end
 
 local BytecodeGenerator = {}
@@ -1567,30 +1692,19 @@ function Vm:ReadString(State)
   return Value
 end
 
-function Vm:GetRegister(State, Register)
-  return State.Vm.Registers[Register]
-end
-
-function Vm:ReadAndGetRegister(State)
-  local RegisterIndex = Vm:Read8(State)
-  local Register = State.Vm.Registers[RegisterIndex]
-  return Register, RegisterIndex
-end
-
-function Vm:GetStringFromRegister(State)
-  local Register, RegisterIndex
-  Register, RegisterIndex = Vm:ReadAndGetRegister(State)
-  return Register.Value, RegisterIndex
-end
-
 function Vm:GetRegister(State, Index)
-  local Frame = State.Vm.Frames[#State.Vm.Frames]
-
-  if Frame == nil then
-    return State.Vm.Registers[Index]
+  if Index < 1 or Index > 256 then
+    Logger:Error(State, "Register index out of bounds: Register%d (valid range: 1-256)", Index)
+    return
   end
 
-  return State.Vm.Registers[Frame.Base + Index]
+  local Frame = State.Vm.Frames[#State.Vm.Frames]
+
+  if Frame then
+    return Frame.Registers[Index]
+  end
+
+  return State.Vm.Registers[Index]
 end
 
 function Vm:SetRegister(State, Index, NewRegister)
@@ -1625,6 +1739,9 @@ function Vm:Decode(State)
     if Type == "Register" or Type == "RegisterString" or Type == "RegisterFunction" then
       local RegisterIndex = Vm:Read8(State)
       Value = Vm:GetRegister(State, RegisterIndex)
+      if State.Stop then
+        return
+      end
 
       if Type == "RegisterString" and Value.Type ~= "String" then
         Logger:Error(State, "Expected register's type as a string")
@@ -1680,9 +1797,16 @@ function Vm:Execute(State)
         Pc = FunctionInfo.Address,
         Environment = {},
         Registers = {},
-        Base = #State.Vm.Registers * 16,
       }
-      table.insert(State.Vm.Frame, Frame)
+
+      for Index = 1, 256 do
+        Frame.Registers[Index] = {
+          Type = "Nil",
+          Value = nil,
+        }
+      end
+
+      table.insert(State.Vm.Frames, Frame)
     end
   elseif Opcode == "LoadFunction" then
     local FunctionAddress = Arguments.FunctionAddress
@@ -1837,6 +1961,7 @@ function Vm:Execute(State)
     local ReturnPc = table.remove(State.Vm.CallStack)
 
     if ReturnPc then
+      table.remove(State.Vm.Frames)
       State.Vm.Pc = ReturnPc
     else
       State.Vm.Pc = #State.Bytecode.Program + 1
@@ -1901,6 +2026,8 @@ Rua.Logger = Logger
 Rua.Tokenizer = Tokenizer
 Rua.Parser = Parser
 Rua.IrGenerator = IrGenerator
+Rua.LuaGenerator = LuaGenerator
+Rua.BytecodeGenerator = BytecodeGenerator
 Rua.Vm = Vm
 
 -- File -> Tokenizer -> Tokens -> Parser -> Ast ->
