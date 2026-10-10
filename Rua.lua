@@ -188,7 +188,7 @@ function Rua.new()
       Lables = {},
       Isa = {
         Opcodes = {
-          GetFunction = 1,
+          -- Unused opcode
           CallFromRegister = 2,
           LoadNumber = 3,
           LoadString = 4,
@@ -224,11 +224,6 @@ function Rua.new()
         },
 
         InstructionArguments = {
-          GetFunction = {
-            [1] = { Type = "RegisterString", Name = "FunctionName" },
-            [2] = { Type = "Register", Name = "FunctionRegister" },
-          },
-
           CallFromRegister = {
             [1] = { Type = "RegisterFunction", Name = "FunctionRegister" },
           },
@@ -421,9 +416,9 @@ function Rua.new()
       Pc = 1,
       Registers = {},
       Stack = {},
+      Frames = {},
       CallStack = {},
-      Variables = {},
-      Functions = {},
+      Environment = {},
       Arguments = {},
       Opcode = "",
       TestFailed = false,
@@ -1160,7 +1155,7 @@ function IrGenerator:GenerateIr(State, Ast)
     local FunctionNameRegister = IrGenerator:ConvertStringToIr(State, Ast.Name)
     local FunctionRegister = IrGenerator:AllocateRegister(State)
 
-    State.CurrentIr.Type = "GetFunction"
+    State.CurrentIr.Type = "GetVariable"
     State.CurrentIr.Arguments = {
       [1] = FunctionNameRegister,
       [2] = FunctionRegister,
@@ -1646,32 +1641,20 @@ function Vm:Execute(State)
   local Arguments = State.Vm.Arguments
   local Opcode = State.Vm.Opcode
 
-  if Opcode == "GetFunction" then
-    local FunctionName = Arguments.FunctionName.Value
+  if Opcode == "CallFromRegister" then
     local FunctionRegister = Arguments.FunctionRegister
-    local Function = State.Vm.Functions[FunctionName]
+    local FunctionInfo = FunctionRegister.Value
 
-    FunctionRegister.Type = "Function"
-    FunctionRegister.Value = {
-      Name = FunctionName,
-      Function = Function,
-    }
-  elseif Opcode == "CallFromRegister" then
-    local FunctionRegister = Arguments.FunctionRegister
-    local FunctionInfo = FunctionRegister.Value.Function
+    local LuaFunction = FunctionInfo.LuaFunction
 
-    if not FunctionInfo then
-      local Function = _G[FunctionRegister.Value.Name]
+    if LuaFunction ~= nil then
+      local CallArguments = {}
 
-      if Function then
-        local CallArguments = {}
-
-        while #State.Vm.Stack > 0 do
-          table.insert(CallArguments, 1, table.remove(State.Vm.Stack).Value)
-        end
-
-        Function(table.unpack(CallArguments))
+      while #State.Vm.Stack > 0 do
+        table.insert(CallArguments, 1, table.remove(State.Vm.Stack).Value)
       end
+
+      LuaFunction(table.unpack(CallArguments))
     else
       table.insert(State.Vm.CallStack, State.Vm.Pc)
       State.Vm.Pc = FunctionInfo.Address
@@ -1681,9 +1664,12 @@ function Vm:Execute(State)
     local FunctionName = Arguments.FunctionName.Value
     local FunctionArgumentCount = Arguments.FunctionArgumentCount
 
-    State.Vm.Functions[FunctionName] = {
-      Address = FunctionAddress,
-      ArgumentCount = FunctionArgumentCount,
+    State.Vm.Environment[FunctionName] = {
+      Type = "Function",
+      Value = {
+        Address = FunctionAddress,
+        ArgumentCount = FunctionArgumentCount,
+      },
     }
   elseif Opcode == "LoadNumber" then
     local ResultRegister = Arguments.ResultRegister
@@ -1805,14 +1791,14 @@ function Vm:Execute(State)
     local VariableName = Arguments.VariableName.Value
     local VariableRegister = Arguments.VariableRegister
 
-    State.Vm.Variables[VariableName] = {
+    State.Vm.Environment[VariableName] = {
       Type = VariableRegister.Type,
       Value = VariableRegister.Value,
     }
   elseif Opcode == "GetVariable" then
     local VariableName = Arguments.VariableName.Value
     local VariableRegister = Arguments.VariableRegister
-    local Value = State.Vm.Variables[VariableName]
+    local Value = State.Vm.Environment[VariableName]
 
     if Value then
       VariableRegister.Type = Value.Type
@@ -1834,6 +1820,21 @@ function Vm:Execute(State)
   end
 end
 
+function Vm:InitalizeRuntime(State)
+  local Functions = {
+    print = print,
+  }
+
+  for FunctionName, LuaFunction in pairs(Functions) do
+    State.Vm.Environment[FunctionName] = {
+      Type = "Function",
+      Value = {
+        LuaFunction = LuaFunction,
+      },
+    }
+  end
+end
+
 function Vm:Initalize(State)
   State.Vm.Pc = 1
   for Index = 1, 256 do
@@ -1842,6 +1843,8 @@ function Vm:Initalize(State)
       Value = nil,
     }
   end
+
+  Vm:InitalizeRuntime(State)
 end
 
 function Vm:Run(State)
