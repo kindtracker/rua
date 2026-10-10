@@ -1583,6 +1583,22 @@ function Vm:GetStringFromRegister(State)
   return Register.Value, RegisterIndex
 end
 
+function Vm:GetRegister(State, Index)
+  local Frame = State.Vm.Frames[#State.Vm.Frames]
+
+  if Frame == nil then
+    return State.Vm.Registers[Index]
+  end
+
+  return State.Vm.Registers[Frame.Base + Index]
+end
+
+function Vm:SetRegister(State, Index, NewRegister)
+  local Frame = State.Vm.Frames[#State.Vm.Frames]
+
+  State.Vm.Registers[Frame.Base + Index] = NewRegister
+end
+
 function Vm:Decode(State)
   local Instruction = Vm:Read8(State)
   local Opcode
@@ -1608,7 +1624,7 @@ function Vm:Decode(State)
 
     if Type == "Register" or Type == "RegisterString" or Type == "RegisterFunction" then
       local RegisterIndex = Vm:Read8(State)
-      Value = State.Vm.Registers[RegisterIndex]
+      Value = Vm:GetRegister(State, RegisterIndex)
 
       if Type == "RegisterString" and Value.Type ~= "String" then
         Logger:Error(State, "Expected register's type as a string")
@@ -1658,6 +1674,15 @@ function Vm:Execute(State)
     else
       table.insert(State.Vm.CallStack, State.Vm.Pc)
       State.Vm.Pc = FunctionInfo.Address
+
+      local Frame = {
+        Function = FunctionInfo,
+        Pc = FunctionInfo.Address,
+        Environment = {},
+        Registers = {},
+        Base = #State.Vm.Registers * 16,
+      }
+      table.insert(State.Vm.Frame, Frame)
     end
   elseif Opcode == "LoadFunction" then
     local FunctionAddress = Arguments.FunctionAddress
@@ -1667,6 +1692,7 @@ function Vm:Execute(State)
     State.Vm.Environment[FunctionName] = {
       Type = "Function",
       Value = {
+        Name = FunctionName,
         Address = FunctionAddress,
         ArgumentCount = FunctionArgumentCount,
       },
@@ -1829,6 +1855,7 @@ function Vm:InitalizeRuntime(State)
     State.Vm.Environment[FunctionName] = {
       Type = "Function",
       Value = {
+        Name = FunctionName,
         LuaFunction = LuaFunction,
       },
     }
